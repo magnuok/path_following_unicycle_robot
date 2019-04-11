@@ -3,43 +3,51 @@ image = imread('map.pgm');
 % Crop image to relevant area
 imageCropped = image(1:1100,1:1300);
 
-% show image
-%imshow(imageCropped)
-
 image = imageCropped < 100;
-%imshow(image)
 
 % create occupancy grid. Free space is 0, for occupied space is 1
-map = robotics.BinaryOccupancyGrid(image);
+% .yaml: Resolution of the map, meters / pixel = 0.020000
+% . BinaryOccupancyGrid: resoultion of cells per meter
+
+map = robotics.BinaryOccupancyGrid(image, 50);
 
 % Copy and inflate the map to factor in the robot's size for obstacle 
 % avoidance
-robotRadius = 2; % TODO. Check dimention
+robotRadius = 0.2; % TODO. Check dimention
 mapInflated = copy(map);
 inflate(mapInflated, robotRadius);
 
 show(mapInflated)
 
-% PRM creates a roadmap path planner object for the environment map specified in the Map property.
+ % PRM creates a roadmap path planner object for the environment map 
+ % specified in the Map property.
  prm = robotics.PRM;
  prm.Map = mapInflated;
- prm.NumNodes = 4000;
- prm.ConnectionDistance = 100;
+ prm.NumNodes = 2000;
+ % ConnectionDistance is an upper threshold for points that are connected 
+ % in the roadmap
+ prm.ConnectionDistance = 3;
  
- %show(prm)
- startLocation = [450 700];
- endLocation = [1240 240];
+ startLocation = [12 11];
+ endLocation = [24.4 5.2];
+ % SW corner [24.4 5.2]
 
  % Search for a solution between start and end location.
  % Continue to add nodes until a path is found.
  
  % path matrix containing [x,y] points
  path = findpath(prm, startLocation, endLocation);
+ 
+ i = 1;
 while isempty(path)
-    prm.NumNodes = prm.NumNodes + 10;
+    % Can tune this to add more each round
+    prm.NumNodes = prm.NumNodes + 100;
     update(prm);
     path = findpath(prm, startLocation, endLocation);
+    fprintf('Iteration: %i\n', i);
+    i = i+1;
 end
+disp('Found path');
 
 show(prm)
 hold on;
@@ -61,7 +69,6 @@ yy=ppval(ppy, xq);
 plot(x,y,'o',xx,yy,'-','LineWidth',2);
 
 %% Robot controller, vizualizer
-
 
 viz = Visualizer2D;
 viz.mapName = 'mapInflated';
