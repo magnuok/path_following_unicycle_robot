@@ -5,7 +5,7 @@ imageCropped = image(1:1100,1:1300);
 
 % show image
 %imshow(imageCropped)
-
+%Just a test for github. Will delete later
 image = imageCropped < 100;
 %imshow(image)
 
