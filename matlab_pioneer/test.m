@@ -10,7 +10,7 @@ odemetry = zeros(1000,3);
 pause(1);
 for i=1:1000
     tic;
-%     pause(0.1)
+    pause(0.0064)
     odeme = pioneer_read_odometry;
     odemetry(i,1) = odeme(1);
     odemetry(i,2) = odeme(2);
@@ -18,5 +18,5 @@ for i=1:1000
     t(i) = toc;
     i
 end
-
+tsum(t, odemetry)
 pioneer_set_controls(sp, 0, 0);
