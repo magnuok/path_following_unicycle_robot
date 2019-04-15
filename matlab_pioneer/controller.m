@@ -1,6 +1,6 @@
 %% Create map
 clear all;
-close all;
+%close all;
 clf
 h = 0.1;
 
@@ -72,7 +72,7 @@ show(prm)
 hold on;
 
 %% INTERPOLATION AND PLOTS
-close all;
+%close all;
 % Set number of points in reference trajectory
 measurment_points = 30;
 
@@ -92,7 +92,7 @@ y_ref=ppval(ppy, xq);
 % Plotting reference trajectory
 plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
 
-figure(2)
+figure(5)
 axis([map.XWorldLimits(1),map.XWorldLimits(2),map.YWorldLimits(1),map.YWorldLimits(2)])
 gg = plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
 title('TRAJECTORY')
@@ -112,7 +112,7 @@ for i = 1: length(x_ref)-1
 end
 
 % Plotting theta_ref
-figure(3)
+figure(6)
 axis([0,x_ref(end),0,pi])
 gg = plot(x_ref, theta_ref, '-','LineWidth',2);
 title('THETA')
@@ -139,7 +139,7 @@ theta_obs(1) = pose_obs(1,3);
 dot_pose(1,:) = [0,0,0];
 
 % plot start position (x,y)
-figure(2)
+figure(7)
 plot(pose(1,1),pose(1,2),'ro');
 
 % Data for plotting, if needed
@@ -196,9 +196,9 @@ for k1 = 1:length(x_ref)
     end
 end
 
-figure(2)
-plot(pose(:,1), pose(:,2), 'k.')
 figure(3)
+plot(pose(:,1), pose(:,2), 'k.')
+figure(4)
 plot(pose(:,1), pose(:,3), 'k.')
 stats = statistics(r)
 

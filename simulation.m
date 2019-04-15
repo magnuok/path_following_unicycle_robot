@@ -34,8 +34,10 @@ show(mapInflated)
  prm.ConnectionDistance = 3;
  
  % ELEVATOR [12 11];
- startLocation = [9 14.5];
- endLocation = [24.4 5.2];
+ startLocation = [8.8 14.6];
+ endLocation = [15 12];
+ %startLocation = [9 14.5];
+ %endLocation = [24.4 5.2];
  % SW corner [24.4 5.2]
 
  % Search for a solution between start and end location.
