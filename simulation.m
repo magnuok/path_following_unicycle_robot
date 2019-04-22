@@ -18,7 +18,7 @@ map = robotics.BinaryOccupancyGrid(image, 50);
 
 % Copy and inflate the map to factor in the robot's size for obstacle 
 % avoidance. Setting higher to get trajectory in middle of halway.
-robotRadius = 0.4; % TODO. Check dimention
+robotRadius = 0.3; % TODO. Check dimention
 mapInflated = copy(map);
 inflate(mapInflated, robotRadius);
 
@@ -31,69 +31,124 @@ show(mapInflated)
  prm.NumNodes = 2000;
  % ConnectionDistance is an upper threshold for points that are connected 
  % in the roadmap
- prm.ConnectionDistance = 3;
+ prm.ConnectionDistance = 2;
  
- % ELEVATOR [12 11];
+ % From HALLWAY to ELEVATOR:
  startLocation = [8.8 14.6];
  endLocation = [15 12];
- %startLocation = [9 14.5];
- %endLocation = [24.4 5.2];
- % SW corner [24.4 5.2]
+ 
+ % From LAB to ELEVATOR:
+ % startLocation = [4 16 ; 8.8 14.6];
+ % endLocation = [8.8 14.6 ; 15 12];
+ 
+ % WHOLE PATH
+ % startLocation = [4 16; 8.8 14.6; 12.5 1.4; 24.4 5; 20.5 17.4; 9 14.5];
+ % endLocation = [8.8 14.6; 12.5 1.4; 24.4 5; 20.5 17.4; 9 14.5; 5 17];
 
  % Search for a solution between start and end location.
  % Continue to add nodes until a path is found.
  
- % path matrix containing [x,y] points
- path = findpath(prm, startLocation, endLocation);
+ path = [];
  
-iterations = 1;
-while isempty(path)
-    % Can tune this to add more each round
-    prm.NumNodes = prm.NumNodes + 100;
-    update(prm);
-    path = findpath(prm, startLocation, endLocation);
-    fprintf('Iteration: %i\n', iterations);
-    iterations = iterations+1;
-end
-disp('Found path');
+ for i = 1:size(startLocation, 1)
+     % path matrix containing [x,y] points
+     sub_path = findpath(prm, startLocation(i,:), endLocation(i,:));
 
-% Removing extraneous nodes to be interpolated
-i = 1;
-while i < length(path)
-    if(norm( path(i,1:2) - path(i+1,1:2) ) > 1)
-        i = i+1;
-    else
-        path(i+1,:) = [];
-        i = 1;
+     % if path is not found, add more nodes
+    iterations = 1;
+    while isempty(sub_path)
+        % Can tune this to add more each round
+        prm.NumNodes = prm.NumNodes + 100;
+        update(prm);
+        sub_path = findpath(prm, startLocation(i,:), endLocation(i,:));
+        fprintf('Iteration: %i\n', iterations);
+        iterations = iterations+1;
     end
     
-end
+    path = [path ; sub_path];
+    show(prm)
+    hold on;
+ end
+ 
+disp('Found path');
 
 show(prm)
 hold on;
 
+% Removing extraneous nodes to be interpolated
+j = 1;
+while j < length(path)
+    if(norm( path(j,1:2) - path(j+1,1:2) ) > 1)
+        j = j+1;
+    else
+        path(j+1,:) = [];
+        j = 1;
+    end
+
+end
+
 %% INTERPOLATION AND PLOTS
-close all;
+%close all;
 % Set number of points in reference trajectory
-measurment_points = 30;
+measurment_points = 20;
 
 x = path(:,1)';
 y = path(:,2)';
-p = pchip(x,y);
 
+% Make sure elements are distinct for interpolating
+for i = 1:length(x)
+    for j = 1:length(x)
+        if (x(i) == x(j) && i~=j)
+            x(j) = x(j) + 0.0001;
+        end
+        if (y(i) == y(j) && i~=j)
+            y(j) = y(j) + 0.0001;
+        end
+    end
+end
+
+
+p = pchip(x,y);
+            
 t = linspace(0,1000,length(x));
 xq = linspace(0,1000,measurment_points);
 % returns a piecewise polynomial structure
 ppx = pchip(t,x);
 ppy = pchip(t,y);
 % evaluates the piecewise polynomial pp at the query points xq
-x_ref=ppval(ppx, xq);
-y_ref=ppval(ppy, xq);
+x_ref = ppval(ppx, xq);
+y_ref = ppval(ppy, xq);
 
 % Plotting reference trajectory
+figure(1);
 plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
 
-figure(2)
+% Start in (0,0)
+x = x - x(1);
+y = y - y(1);
+x_ref = x_ref - x_ref(1);
+y_ref = y_ref - y_ref(1);
+
+% Rotate points
+theta = atan( (y_ref(2) - y_ref(1)) / (x_ref(2) - x_ref(1) ));
+R = [cos(-theta) -sin(-theta); sin(-theta) cos(-theta)];
+trajectory_rotated = R*[x_ref ; y_ref];
+% Rotate interploation points
+interp_roateted = R*[x ; y];
+% pick out the vectors of rotated x- and y-data
+x_ref = trajectory_rotated(1,:);
+y_ref = trajectory_rotated(2,:);
+x = interp_roateted(1,:);
+y = interp_roateted(2,:);
+
+% Calculating theta_ref
+theta_ref = zeros(1,length(x_ref));
+for i = 1: length(x_ref)-1 
+    theta_ref(i) = atan( (y_ref(i+1) - y_ref(i)) / (x_ref(i+1) - x_ref(i) ));
+end
+theta_ref = theta_ref - theta_ref(1);
+
+trajectory_plot = figure(2);
 axis([map.XWorldLimits(1),map.XWorldLimits(2),map.YWorldLimits(1),map.YWorldLimits(2)])
 gg = plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
 title('TRAJECTORY')
@@ -106,25 +161,22 @@ gg=ylabel("y - [m]");
 set(gg,"Fontsize",14);
 hold on;
 
-% Calculating theta_ref
-theta_ref = zeros(1,length(x_ref));
-for i = 1: length(x_ref)-1 
-    theta_ref(i) = atan( (y_ref(i+1) - y_ref(i)) / (x_ref(i+1) - x_ref(i) ));
+% only printing theta for tests. No meaning for whole path.
+if (size(startLocation, 1) == 1)
+    % Plotting theta_ref
+    theta_plot = figure(3);
+    axis([0,x_ref(end),0,pi])
+    gg = plot(x_ref, theta_ref, '-','LineWidth',2);
+    title('THETA')
+    hl=legend('$\theta_{ref}$', 'AutoUpdate','off');
+    set(hl,'Interpreter','latex')
+    set(gg,"LineWidth",1.5)
+    gg=xlabel("x - [m]");
+    set(gg,"Fontsize",14);
+    gg=ylabel("rad");
+    set(gg,"Fontsize",14);
+    hold on;
 end
-
-% Plotting theta_ref
-figure(3)
-axis([0,x_ref(end),0,pi])
-gg = plot(x_ref, theta_ref, '-','LineWidth',2);
-title('THETA')
-hl=legend('$\theta_{ref}$', 'AutoUpdate','off');
-set(hl,'Interpreter','latex')
-set(gg,"LineWidth",1.5)
-gg=xlabel("x - [m]");
-set(gg,"Fontsize",14);
-gg=ylabel("rad");
-set(gg,"Fontsize",14);
-hold on;
 
 %% POSITION TRACKING
 
@@ -169,7 +221,7 @@ for k1 = 1:length(x_ref)
         % Tuning variables
         K1 = 1;
         K2 = 1;
-        K3 = 1;
+        K3 = 3;
         v_max=1;
         
         % Control law
@@ -211,5 +263,9 @@ end
 
 figure(2)
 plot(pose(:,1), pose(:,2), 'k.')
-figure(3)
-plot(pose(:,1), pose(:,3), 'k.')
+
+% only printing theta for tests. No meaning for whole path.
+if (length(startLocation) == 2)
+    figure(3)
+    plot(pose(:,1), pose(:,3), 'k.')
+end
