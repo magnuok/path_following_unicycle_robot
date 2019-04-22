@@ -31,15 +31,23 @@ show(mapInflated)
  prm.NumNodes = 2000;
  % ConnectionDistance is an upper threshold for points that are connected 
  % in the roadmap
- prm.ConnectionDistance = 2;
+ prm.ConnectionDistance = 3;
  
  % From HALLWAY to ELEVATOR:
- startLocation = [8.8 14.6];
- endLocation = [15 12];
+ % startLocation = [8.8 14.6];
+ % endLocation = [15 12];
+ 
+ % From ELEVATOR to HALLWAY:
+ % startLocation = [15 12];
+ % endLocation = [8.8 14.6];
  
  % From LAB to ELEVATOR:
- % startLocation = [4 16 ; 8.8 14.6];
- % endLocation = [8.8 14.6 ; 15 12];
+  startLocation = [4 16 ; 8.8 14.6];
+  endLocation = [8.8 14.6 ; 15 12];
+ 
+ % WHOLE HALLWAY
+ % startLocation = [8.8 14.6; 12.5 1.4; 24.4 5; 20.5 17.4];
+ % endLocation = [12.5 1.4; 24.4 5; 20.5 17.4; 9 14.5];
  
  % WHOLE PATH
  % startLocation = [4 16; 8.8 14.6; 12.5 1.4; 24.4 5; 20.5 17.4; 9 14.5];
@@ -90,7 +98,8 @@ end
 %% INTERPOLATION AND PLOTS
 %close all;
 % Set number of points in reference trajectory
-measurment_points = 20;
+% TUNING
+measurment_points = 100;
 
 x = path(:,1)';
 y = path(:,2)';
@@ -106,7 +115,6 @@ for i = 1:length(x)
         end
     end
 end
-
 
 p = pchip(x,y);
             
@@ -182,18 +190,12 @@ end
 
 % start pos = [x, y, theta]
 pose(1,:) = [x_ref(1), y_ref(1), theta_ref(1)];
-
-% observed position
-pose_obs(1,:) = pose(1,:);
-
-theta_obs(1) = pose_obs(1,3);
-
-% calculated speeds
-dot_pose(1,:) = [0,0,0];
-
 % plot start position (x,y)
 figure(2)
 plot(pose(1,1),pose(1,2),'ro');
+
+% observed position
+pose_obs(1,:) = pose(1,:);
 
 % Data for plotting, if needed
 e = [];
@@ -206,42 +208,30 @@ w = [];
 k = 1;
 
 % In Hz
-r = robotics.Rate(10);
+r = robotics.Rate(50);
 
-% Serial port object = pioneer
-% need to change a parameter inside here
 sp = serial_port_start();
 %CONFIG: timer_period = 0.1. Can change to lower maybe?
 pioneer_init(sp);
 pause(2);
-
-
-% MUST SET FIRST ODOM DATA TO WHAT'S IN MAP. That is making the path start
-% (x=0,y=0,theta=0)!
-
 
 for k1 = 1:length(x_ref)
     
     % Changing reference
     pose_ref = [x_ref(k1),y_ref(k1)];
     
-    while norm(pose_obs(k,1:2) - pose_ref) > 0.3
+    while norm(pose_obs(k,1:2) - pose_ref) > 0.2 % TUNING
         
         % this will be performed every dadada seconds
         % data = [pose_new, e, phi, alpha, v, w]
         data = loop(sp, pose_ref, pose_obs(k,:));
         
         pose_obs(k+1,:) = data(1:3);
-        e(k) = data(2);
-        phi(k) = data(3);
-        alpha(k) = data(4);
-        v(k) = data(5);
-        w(k) = data(6);
-        
-         % plotting simulated trajectory
-         %figure(2)
-         %plot(pose_obs(k+1,1), pose_obs(k+1,2), 'k.')
-         %drawnow
+        %e(k) = data(2);
+        %phi(k) = data(3);
+        %alpha(k) = data(4);
+        %v(k) = data(5);
+        %w(k) = data(6);
         
         k=k+1;
         disp(['iteration',num2str(k)])
@@ -250,17 +240,24 @@ for k1 = 1:length(x_ref)
 end
 
 figure(2)
-plot(pose(:,1), pose(:,2), 'k.')
+plot(pose_obs(:,1), pose_obs(:,2), 'k.')
 % only printing theta for tests. No meaning for whole path.
 if (size(startLocation, 1) == 1)
     figure(3)
     plot(pose(:,1), pose(:,3), 'k.')
 end
+
+pioneer_set_controls(sp, 0, 0);
+pioneer_close(sp);
 stats = statistics(r)
 
-
-function data = loop(sp, pose_ref, pose_obs)
-    % pose_obs is uneccassary when testing on robot
+function data = loop(sp, pose_ref)
+    
+    % TUNING
+    K1 = 1; % Artikkel: 0.41 2.94 1.42 0.5
+    K2 = 1;
+    K3 = 1;
+    v_max=0.4;
 
     % READ ODOMETRY HERE to get pose_obs
     pose_obs = pioneer_read_odometry();
@@ -274,7 +271,6 @@ function data = loop(sp, pose_ref, pose_obs)
         pose_obs(3) = -(pose_obs(3)-2048) * (pi / 2048);
     end
     
-    
     % Calculating errors and variables
     e = norm(pose_ref - pose_obs(1:2));
     phi = atan2(pose_ref(2)-pose_obs(2),pose_ref(1)-pose_obs(1));
@@ -286,28 +282,21 @@ function data = loop(sp, pose_ref, pose_obs)
     elseif alpha < -pi
         alpha = alpha + 2*pi;
     end
-
-    % Tuning variables
-    h = 0.1;
-    K1 = 1;
-    K2 = 1;
-    K3 = 1;
-    v_max=0.5;
+    
+%     if phi>pi
+%         phi = phi-2*pi;
+%     elseif phi < -pi
+%         phi = phi + 2*pi;
+%     end
 
     % Control law
     % Put in a wind-up parameter here and tune variables?
     v = v_max*tanh(K1*e);
     w = v_max*((1+K2*phi)*tanh(K1*e)/e*sin(alpha)+K3*tanh(alpha));
+    % w = v_max*((1+K2*(phi/alpha))*(tanh(K1*e)/e)*sin(alpha)+K3*tanh(alpha));
     
     % SET v AND w here
      pioneer_set_controls(sp, round(v*1000), round(w*(180/pi)))
-    
-    % SIMULATION
-    % Change i x,y,theta position
-%     pose_new = zeros(1,3);
-%     pose_new(1) = pose_obs(1) + h*cos(pose_obs(3))*v;
-%     pose_new(2) = pose_obs(2) + h*sin(pose_obs(3))*v;
-%     pose_new(3) = pose_obs(3) + h*w;
 
     % ROBOT
     pose_new = pose_obs;
