@@ -16,6 +16,7 @@ image = imageCropped < 100;
 
 map = robotics.BinaryOccupancyGrid(image, 50);
 
+
 % Copy and inflate the map to factor in the robot's size for obstacle 
 % avoidance. Setting higher to get trajectory in middle of halway.
 robotRadius = 0.3; % TODO. Check dimention
@@ -42,12 +43,14 @@ show(mapInflated)
  % endLocation = [8.8 14.6];
  
  % From LAB to ELEVATOR:
-  startLocation = [4 16 ; 8.8 14.6];
-  endLocation = [8.8 14.6 ; 15 12];
+ % startLocation = [4 16 ; 8.8 14.6];
+ % endLocation = [8.8 14.6 ; 15 12];
+ % measurment_points = 30;
  
  % WHOLE HALLWAY
- % startLocation = [8.8 14.6; 12.5 1.4; 24.4 5; 20.5 17.4];
- % endLocation = [12.5 1.4; 24.4 5; 20.5 17.4; 9 14.5];
+  startLocation = [8.8 14.6; 12.5 1.4; 24.4 5; 20.5 17.4];
+  endLocation = [12.5 1.4; 24.4 5; 20.5 17.4; 9 14.5];
+  measurment_points = 150;
  
  % WHOLE PATH
  % startLocation = [4 16; 8.8 14.6; 12.5 1.4; 24.4 5; 20.5 17.4; 9 14.5];
@@ -96,10 +99,6 @@ while j < length(path)
 end
 
 %% INTERPOLATION AND PLOTS
-%close all;
-% Set number of points in reference trajectory
-% TUNING
-measurment_points = 100;
 
 x = path(:,1)';
 y = path(:,2)';
@@ -158,7 +157,7 @@ theta_ref = theta_ref - theta_ref(1);
 
 trajectory_plot = figure(2);
 axis([map.XWorldLimits(1),map.XWorldLimits(2),map.YWorldLimits(1),map.YWorldLimits(2)])
-gg = plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
+gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-','LineWidth',2);
 title('TRAJECTORY')
 hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$', 'AutoUpdate','off');
 set(hl,'Interpreter','latex')
@@ -167,6 +166,17 @@ gg=xlabel("x - [m]");
 set(gg,"Fontsize",14);
 gg=ylabel("y - [m]");
 set(gg,"Fontsize",14);
+
+radius = 0.3;
+
+for i = 1:length(x_ref)
+    %// center
+    c = [x_ref(i) y_ref(i)];
+
+    pos = [c-radius 2*radius 2*radius];
+    rectangle('Position',pos,'Curvature',[1 1])
+    axis equal
+end
 hold on;
 
 % only printing theta for tests. No meaning for whole path.
@@ -191,8 +201,8 @@ end
 % start pos = [x, y, theta]
 pose(1,:) = [x_ref(1), y_ref(1), theta_ref(1)];
 % plot start position (x,y)
-figure(2)
-plot(pose(1,1),pose(1,2),'ro');
+% figure(2)
+% plot(pose(1,1),pose(1,2),'ro');
 
 % observed position
 pose_obs(1,:) = pose(1,:);
@@ -218,13 +228,13 @@ pause(2);
 for k1 = 1:length(x_ref)
     
     % Changing reference
-    pose_ref = [x_ref(k1),y_ref(k1)];
+    pose_ref = [x_ref(k1),y_ref(k1), theta_ref(k1)];
     
-    while norm(pose_obs(k,1:2) - pose_ref) > 0.2 % TUNING
+    while norm(pose_obs(k,1:2) - pose_ref(1:2)) > radius % TUNING
         
         % this will be performed every dadada seconds
         % data = [pose_new, e, phi, alpha, v, w]
-        data = loop(sp, pose_ref, pose_obs(k,:));
+        data = loop(sp, pose_ref);
         
         pose_obs(k+1,:) = data(1:3);
         %e(k) = data(2);
@@ -233,8 +243,16 @@ for k1 = 1:length(x_ref)
         %v(k) = data(5);
         %w(k) = data(6);
         
+        figure(2);
+        hold on;
+        plot(pose_obs(k+1,1), pose_obs(k+1,2), 'k.');
+        drawnow;
+        hold off;
+        
         k=k+1;
         disp(['iteration',num2str(k)])
+        
+        
         waitfor(r);
     end
 end
@@ -255,12 +273,13 @@ function data = loop(sp, pose_ref)
     
     % TUNING
     K1 = 1; % Artikkel: 0.41 2.94 1.42 0.5
-    K2 = 1;
+    K2 = 1.5;
     K3 = 1;
-    v_max=0.4;
+    v_max=0.5;
 
     % READ ODOMETRY HERE to get pose_obs
     pose_obs = pioneer_read_odometry();
+    
     
     %convert to meter from mm and robots angular
     pose_obs(1) = pose_obs(1)/1000;
@@ -268,13 +287,18 @@ function data = loop(sp, pose_ref)
     if( pose_obs(3) <= 2048)
         pose_obs(3) = pose_obs(3) * (pi / 2048);
     else
-        pose_obs(3) = -(pose_obs(3)-2048) * (pi / 2048);
+        pose_obs(3) = -(4096 - pose_obs(3)) * (pi / 2048);
     end
     
     % Calculating errors and variables
-    e = norm(pose_ref - pose_obs(1:2));
-    phi = atan2(pose_ref(2)-pose_obs(2),pose_ref(1)-pose_obs(1));
-    alpha = phi - pose_obs(3);
+    % e = norm(pose_ref - pose_obs(1:2));
+    % theta = atan2(pose_ref(2) - pose_obs(2), pose_ref(1) - pose_obs(1));
+    % alpha = theta - pose_obs(3);
+    
+    % TEST
+    e = norm(pose_ref(1:2) - pose_obs(1:2));
+    theta = atan2(pose_ref(2) - pose_obs(2), pose_ref(1) - pose_obs(1)) - pose_ref(3);
+    alpha = theta - pose_obs(3) + pose_ref(3);
 
     % Compensating for if angle is more than pi or less than pi
     if alpha > pi
@@ -292,8 +316,8 @@ function data = loop(sp, pose_ref)
     % Control law
     % Put in a wind-up parameter here and tune variables?
     v = v_max*tanh(K1*e);
-    w = v_max*((1+K2*phi)*tanh(K1*e)/e*sin(alpha)+K3*tanh(alpha));
-    % w = v_max*((1+K2*(phi/alpha))*(tanh(K1*e)/e)*sin(alpha)+K3*tanh(alpha));
+    % w = v_max*((1+K2*theta)*tanh(K1*e)/e*sin(alpha)+K3*tanh(alpha));
+    w = v_max*( (1+K2*(theta/alpha)) * (tanh(K1*e)/e) * sin(alpha) + K3*tanh(alpha));
     
     % SET v AND w here
      pioneer_set_controls(sp, round(v*1000), round(w*(180/pi)))
@@ -307,5 +331,6 @@ function data = loop(sp, pose_ref)
         pose_new(3)=pose_new(3)+2*pi;
     end
     
-    data = [pose_new, e, phi, alpha, v, w];
+    data = [pose_new, e, theta, alpha, v, w];
+    
 end
