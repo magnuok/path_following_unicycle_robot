@@ -16,9 +16,10 @@ image = imageCropped < 100;
 
 map = robotics.BinaryOccupancyGrid(image, 50);
 
+
 % Copy and inflate the map to factor in the robot's size for obstacle 
 % avoidance. Setting higher to get trajectory in middle of halway.
-robotRadius = 0.4; % TODO. Check dimention
+robotRadius = 0.3; % TODO. Check dimention
 mapInflated = copy(map);
 inflate(mapInflated, robotRadius);
 
@@ -33,68 +34,130 @@ show(mapInflated)
  % in the roadmap
  prm.ConnectionDistance = 3;
  
- % ELEVATOR [12 11];
- startLocation = [8.8 14.6];
- endLocation = [15 12];
- % SW corner [24.4 5.2]
+ % From HALLWAY to ELEVATOR:
+ % startLocation = [8.8 14.6];
+ % endLocation = [15 12];
+ 
+ % From ELEVATOR to HALLWAY:
+ % startLocation = [15 12];
+ % endLocation = [8.8 14.6];
+ 
+ % From LAB to ELEVATOR:
+ % startLocation = [4 16 ; 8.8 14.6];
+ % endLocation = [8.8 14.6 ; 15 12];
+ % measurment_points = 30;
+ 
+ % WHOLE HALLWAY
+  startLocation = [8.8 14.6; 12.5 1.4; 24.4 5; 20.5 17.4];
+  endLocation = [12.5 1.4; 24.4 5; 20.5 17.4; 9 14.5];
+  measurment_points = 150;
+ 
+ % WHOLE PATH
+ % startLocation = [4 16; 8.8 14.6; 12.5 1.4; 24.4 5; 20.5 17.4; 9 14.5];
+ % endLocation = [8.8 14.6; 12.5 1.4; 24.4 5; 20.5 17.4; 9 14.5; 5 17];
 
  % Search for a solution between start and end location.
  % Continue to add nodes until a path is found.
  
- % path matrix containing [x,y] points
- path = findpath(prm, startLocation, endLocation);
+ path = [];
  
- % if path is not found, add more nodes
-iterations = 1;
-while isempty(path)
-    % Can tune this to add more each round
-    prm.NumNodes = prm.NumNodes + 100;
-    update(prm);
-    path = findpath(prm, startLocation, endLocation);
-    fprintf('Iteration: %i\n', iterations);
-    iterations = iterations+1;
-end
-disp('Found path');
+ for i = 1:size(startLocation, 1)
+     % path matrix containing [x,y] points
+     sub_path = findpath(prm, startLocation(i,:), endLocation(i,:));
 
-% Removing extraneous nodes to be interpolated
-i = 1;
-while i < length(path)
-    if(norm( path(i,1:2) - path(i+1,1:2) ) > 1)
-        i = i+1;
-    else
-        path(i+1,:) = [];
-        i = 1;
+     % if path is not found, add more nodes
+    iterations = 1;
+    while isempty(sub_path)
+        % Can tune this to add more each round
+        prm.NumNodes = prm.NumNodes + 100;
+        update(prm);
+        sub_path = findpath(prm, startLocation(i,:), endLocation(i,:));
+        fprintf('Iteration: %i\n', iterations);
+        iterations = iterations+1;
     end
     
-end
+    path = [path ; sub_path];
+    show(prm)
+    hold on;
+ end
+ 
+disp('Found path');
 
 show(prm)
 hold on;
 
+% Removing extraneous nodes to be interpolated
+j = 1;
+while j < length(path)
+    if(norm( path(j,1:2) - path(j+1,1:2) ) > 1)
+        j = j+1;
+    else
+        path(j+1,:) = [];
+        j = 1;
+    end
+
+end
+
 %% INTERPOLATION AND PLOTS
-close all;
-% Set number of points in reference trajectory
-measurment_points = 30;
 
 x = path(:,1)';
 y = path(:,2)';
-p = pchip(x,y);
 
+% Make sure elements are distinct for interpolating
+for i = 1:length(x)
+    for j = 1:length(x)
+        if (x(i) == x(j) && i~=j)
+            x(j) = x(j) + 0.0001;
+        end
+        if (y(i) == y(j) && i~=j)
+            y(j) = y(j) + 0.0001;
+        end
+    end
+end
+
+p = pchip(x,y);
+            
 t = linspace(0,1000,length(x));
 xq = linspace(0,1000,measurment_points);
 % returns a piecewise polynomial structure
 ppx = pchip(t,x);
 ppy = pchip(t,y);
 % evaluates the piecewise polynomial pp at the query points xq
-x_ref=ppval(ppx, xq);
-y_ref=ppval(ppy, xq);
+x_ref = ppval(ppx, xq);
+y_ref = ppval(ppy, xq);
 
 % Plotting reference trajectory
+figure(1);
 plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
 
-figure(2)
+% Start in (0,0)
+x = x - x(1);
+y = y - y(1);
+x_ref = x_ref - x_ref(1);
+y_ref = y_ref - y_ref(1);
+
+% Rotate points
+theta = atan( (y_ref(2) - y_ref(1)) / (x_ref(2) - x_ref(1) ));
+R = [cos(-theta) -sin(-theta); sin(-theta) cos(-theta)];
+trajectory_rotated = R*[x_ref ; y_ref];
+% Rotate interploation points
+interp_roateted = R*[x ; y];
+% pick out the vectors of rotated x- and y-data
+x_ref = trajectory_rotated(1,:);
+y_ref = trajectory_rotated(2,:);
+x = interp_roateted(1,:);
+y = interp_roateted(2,:);
+
+% Calculating theta_ref
+theta_ref = zeros(1,length(x_ref));
+for i = 1: length(x_ref)-1 
+    theta_ref(i) = atan( (y_ref(i+1) - y_ref(i)) / (x_ref(i+1) - x_ref(i) ));
+end
+theta_ref = theta_ref - theta_ref(1);
+
+trajectory_plot = figure(2);
 axis([map.XWorldLimits(1),map.XWorldLimits(2),map.YWorldLimits(1),map.YWorldLimits(2)])
-gg = plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
+gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-','LineWidth',2);
 title('TRAJECTORY')
 hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$', 'AutoUpdate','off');
 set(hl,'Interpreter','latex')
@@ -103,44 +166,46 @@ gg=xlabel("x - [m]");
 set(gg,"Fontsize",14);
 gg=ylabel("y - [m]");
 set(gg,"Fontsize",14);
-hold on;
 
-% Calculating theta_ref
-theta_ref = zeros(1,length(x_ref));
-for i = 1: length(x_ref)-1 
-    theta_ref(i) = atan( (y_ref(i+1) - y_ref(i)) / (x_ref(i+1) - x_ref(i) ));
+radius = 0.3;
+
+for i = 1:length(x_ref)
+    %// center
+    c = [x_ref(i) y_ref(i)];
+
+    pos = [c-radius 2*radius 2*radius];
+    rectangle('Position',pos,'Curvature',[1 1])
+    axis equal
 end
-
-% Plotting theta_ref
-figure(3)
-axis([0,x_ref(end),0,pi])
-gg = plot(x_ref, theta_ref, '-','LineWidth',2);
-title('THETA')
-hl=legend('$\theta_{ref}$', 'AutoUpdate','off');
-set(hl,'Interpreter','latex')
-set(gg,"LineWidth",1.5)
-gg=xlabel("x - [m]");
-set(gg,"Fontsize",14);
-gg=ylabel("rad");
-set(gg,"Fontsize",14);
 hold on;
+
+% only printing theta for tests. No meaning for whole path.
+if (size(startLocation, 1) == 1)
+    % Plotting theta_ref
+    theta_plot = figure(3);
+    axis([0,x_ref(end),0,pi])
+    gg = plot(x_ref, theta_ref, '-','LineWidth',2);
+    title('THETA')
+    hl=legend('$\theta_{ref}$', 'AutoUpdate','off');
+    set(hl,'Interpreter','latex')
+    set(gg,"LineWidth",1.5)
+    gg=xlabel("x - [m]");
+    set(gg,"Fontsize",14);
+    gg=ylabel("rad");
+    set(gg,"Fontsize",14);
+    hold on;
+end
 
 %% POSITION TRACKING
 
 % start pos = [x, y, theta]
 pose(1,:) = [x_ref(1), y_ref(1), theta_ref(1)];
+% plot start position (x,y)
+% figure(2)
+% plot(pose(1,1),pose(1,2),'ro');
 
 % observed position
 pose_obs(1,:) = pose(1,:);
-
-theta_obs(1) = pose_obs(1,3);
-
-% calculated speeds
-dot_pose(1,:) = [0,0,0];
-
-% plot start position (x,y)
-figure(2)
-plot(pose(1,1),pose(1,2),'ro');
 
 % Data for plotting, if needed
 e = [];
@@ -153,61 +218,68 @@ w = [];
 k = 1;
 
 % In Hz
-r = robotics.Rate(10);
+r = robotics.Rate(50);
 
-% Serial port object = pioneer
-% need to change a parameter inside here
 sp = serial_port_start();
 %CONFIG: timer_period = 0.1. Can change to lower maybe?
 pioneer_init(sp);
 pause(2);
 
-
-% MUST SET FIRST ODOM DATA TO WHAT'S IN MAP. That is making the path start
-% (x=0,y=0,theta=0)!
-
-
 for k1 = 1:length(x_ref)
     
     % Changing reference
-    pose_ref = [x_ref(k1),y_ref(k1)];
+    pose_ref = [x_ref(k1),y_ref(k1), theta_ref(k1)];
     
-    while norm(pose_obs(k,1:2) - pose_ref) > 0.3
+    while norm(pose_obs(k,1:2) - pose_ref(1:2)) > radius % TUNING
         
         % this will be performed every dadada seconds
         % data = [pose_new, e, phi, alpha, v, w]
-        data = loop(sp, pose_ref, pose_obs(k,:));
+        data = loop(sp, pose_ref);
         
         pose_obs(k+1,:) = data(1:3);
-        e(k) = data(2);
-        phi(k) = data(3);
-        alpha(k) = data(4);
-        v(k) = data(5);
-        w(k) = data(6);
+        %e(k) = data(2);
+        %phi(k) = data(3);
+        %alpha(k) = data(4);
+        %v(k) = data(5);
+        %w(k) = data(6);
         
-         % plotting simulated trajectory
-         %figure(2)
-         %plot(pose_obs(k+1,1), pose_obs(k+1,2), 'k.')
-         %drawnow
+        figure(2);
+        hold on;
+        plot(pose_obs(k+1,1), pose_obs(k+1,2), 'k.');
+        drawnow;
+        hold off;
         
         k=k+1;
         disp(['iteration',num2str(k)])
+        
+        
         waitfor(r);
     end
 end
 
 figure(2)
-plot(pose(:,1), pose(:,2), 'k.')
-figure(3)
-plot(pose(:,1), pose(:,3), 'k.')
+plot(pose_obs(:,1), pose_obs(:,2), 'k.')
+% only printing theta for tests. No meaning for whole path.
+if (size(startLocation, 1) == 1)
+    figure(3)
+    plot(pose(:,1), pose(:,3), 'k.')
+end
+
+pioneer_set_controls(sp, 0, 0);
+pioneer_close(sp);
 stats = statistics(r)
 
-
-function data = loop(sp, pose_ref, pose_obs)
-    % pose_obs is uneccassary when testing on robot
+function data = loop(sp, pose_ref)
+    
+    % TUNING
+    K1 = 1; % Artikkel: 0.41 2.94 1.42 0.5
+    K2 = 1.5;
+    K3 = 1;
+    v_max=0.5;
 
     % READ ODOMETRY HERE to get pose_obs
     pose_obs = pioneer_read_odometry();
+    
     
     %convert to meter from mm and robots angular
     pose_obs(1) = pose_obs(1)/1000;
@@ -215,14 +287,18 @@ function data = loop(sp, pose_ref, pose_obs)
     if( pose_obs(3) <= 2048)
         pose_obs(3) = pose_obs(3) * (pi / 2048);
     else
-        pose_obs(3) = -(pose_obs(3)-2048) * (pi / 2048);
+        pose_obs(3) = -(4096 - pose_obs(3)) * (pi / 2048);
     end
     
-    
     % Calculating errors and variables
-    e = norm(pose_ref - pose_obs(1:2));
-    phi = atan2(pose_ref(2)-pose_obs(2),pose_ref(1)-pose_obs(1));
-    alpha = phi - pose_obs(3);
+    % e = norm(pose_ref - pose_obs(1:2));
+    % theta = atan2(pose_ref(2) - pose_obs(2), pose_ref(1) - pose_obs(1));
+    % alpha = theta - pose_obs(3);
+    
+    % TEST
+    e = norm(pose_ref(1:2) - pose_obs(1:2));
+    theta = atan2(pose_ref(2) - pose_obs(2), pose_ref(1) - pose_obs(1)) - pose_ref(3);
+    alpha = theta - pose_obs(3) + pose_ref(3);
 
     % Compensating for if angle is more than pi or less than pi
     if alpha > pi
@@ -230,28 +306,21 @@ function data = loop(sp, pose_ref, pose_obs)
     elseif alpha < -pi
         alpha = alpha + 2*pi;
     end
-
-    % Tuning variables
-    h = 0.1;
-    K1 = 1;
-    K2 = 1;
-    K3 = 1;
-    v_max=0.5;
+    
+%     if phi>pi
+%         phi = phi-2*pi;
+%     elseif phi < -pi
+%         phi = phi + 2*pi;
+%     end
 
     % Control law
     % Put in a wind-up parameter here and tune variables?
     v = v_max*tanh(K1*e);
-    w = v_max*((1+K2*phi)*tanh(K1*e)/e*sin(alpha)+K3*tanh(alpha));
+    % w = v_max*((1+K2*theta)*tanh(K1*e)/e*sin(alpha)+K3*tanh(alpha));
+    w = v_max*( (1+K2*(theta/alpha)) * (tanh(K1*e)/e) * sin(alpha) + K3*tanh(alpha));
     
     % SET v AND w here
      pioneer_set_controls(sp, round(v*1000), round(w*(180/pi)))
-    
-    % SIMULATION
-    % Change i x,y,theta position
-%     pose_new = zeros(1,3);
-%     pose_new(1) = pose_obs(1) + h*cos(pose_obs(3))*v;
-%     pose_new(2) = pose_obs(2) + h*sin(pose_obs(3))*v;
-%     pose_new(3) = pose_obs(3) + h*w;
 
     % ROBOT
     pose_new = pose_obs;
@@ -262,5 +331,6 @@ function data = loop(sp, pose_ref, pose_obs)
         pose_new(3)=pose_new(3)+2*pi;
     end
     
-    data = [pose_new, e, phi, alpha, v, w];
+    data = [pose_new, e, theta, alpha, v, w];
+    
 end
