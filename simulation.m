@@ -34,7 +34,7 @@ show(mapInflated)
  prm.ConnectionDistance = 3;
  
  % ELEVATOR [12 11];
- startLocation = [9 14.5];
+ startLocation = [8.8 14.6];
  endLocation = [24.4 5.2];
  % SW corner [24.4 5.2]
 
@@ -73,7 +73,8 @@ hold on;
 %% INTERPOLATION AND PLOTS
 close all;
 % Set number of points in reference trajectory
-measurment_points = 30;
+
+measurment_points = 20;
 
 x = path(:,1)';
 y = path(:,2)';
