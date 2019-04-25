@@ -33,6 +33,10 @@ show(mapInflated)
  % in the roadmap
  prm.ConnectionDistance = 2;
  
+ % ELEVATOR [12 11];
+ startLocation = [8.8 14.6];
+ endLocation = [24.4 5.2];
+ % SW corner [24.4 5.2]
  % From HALLWAY to ELEVATOR:
  startLocation = [8.8 14.6];
  endLocation = [15 12];
@@ -90,6 +94,7 @@ end
 %% INTERPOLATION AND PLOTS
 %close all;
 % Set number of points in reference trajectory
+
 measurment_points = 20;
 
 x = path(:,1)';
