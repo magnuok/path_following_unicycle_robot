@@ -2,21 +2,33 @@
 % need to change a parameter inside here
 sp = serial_port_start();
 pioneer_init(sp);
-pause(3);
+pause(2);
 
-% Move 4 meters. measure
-
-
-pioneer_set_controls(sp, 200, 0);
-pause(20);
+pause(0.1);
 
 pioneer_set_controls(sp, 0, 0);
-
+pause(0.3);
+%forward
+pioneer_set_controls(sp, 300, 0);
+pause(1.433333);
+pioneer_set_controls(sp, 0, 0);
+pause(0.1);
+%turn
+pioneer_set_controls(sp, 0, -85);
 pause(1);
+pioneer_set_controls(sp, 0, 0);
 
-pose = pioneer_read_odometry();
+% Check if door is open here
+pause(3);
 
-pioneer_close(sp)
+% turn back
+pioneer_set_controls(sp, 0, 85);
+pause(1);
+pioneer_set_controls(sp, 0, 0);
+pause(0.1);
+%backward
+pioneer_set_controls(sp, -300, 0);
+pause(1.433333);
+pioneer_set_controls(sp, 0, 0);
 
-% CHECK IF POSITIVE OR NEGATIV
-theta_offsett = acos(pose(1,1)/4000)
+pioneer_close(sp);

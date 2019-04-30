@@ -32,7 +32,7 @@ leftpoints = []; % [x,y]
 rightpoints = [];
 
 % Søker bare for 1 meter frem her.
-search_range = 1000;
+search_range = 700;
 
 % deler opp i venstre og høyre liste
 for i = 1:length(x)
@@ -116,7 +116,7 @@ if ~isempty(nearby_door_left)
 end
 
 % Booleans that execute an event in cause of true
-ans = [detect_door_left, detect_door_right];
+ans = [detect_door_right ,detect_door_left];
 
 %% PLOTTING. Coment out when running
 

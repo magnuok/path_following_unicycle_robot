@@ -3,7 +3,7 @@ clear all;
 close all;
 clf;
 
-image = imread('map_corrected.jpg');
+image = imread('floor_plant.jpg');
 % Crop image to relevant area
 imageCropped = image(1:1150,1:1100);
 image = imageCropped < 100;
@@ -14,14 +14,14 @@ map = robotics.BinaryOccupancyGrid(image, 50);
 
 % Copy and inflate the map to factor in the robot's size for obstacle 
 % avoidance. Setting higher to get trajectory in middle of halway.
-robotRadius = 0.3; %
+robotRadius = 0.1; %
 mapInflated = copy(map);
 inflate(mapInflated, robotRadius);
 show(mapInflated)
 hold on;
 
 global doors;
-doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
+doors = dlmread('Doors_martim.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
  radius = 0.2;
@@ -130,6 +130,7 @@ y_ref = ppval(ppy, xq);
 % Plotting reference trajectory in node-map
 figure(1);
 plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
+plot(doors(:,1)/1000, doors(:,2)/1000, '*');
 
 % DOORS
 doors_x = doors(:,1) - x(1)*1000;
@@ -147,7 +148,7 @@ theta = atan2( (y_ref(2) - y_ref(1)) , (x_ref(2) - x_ref(1) ));
 R = [cos(-theta) -sin(-theta); sin(-theta) cos(-theta)];
 trajectory_rotated = R*[x_ref ; y_ref];
 
-doors_rotated = R*[doors_x' ; doors_y']
+doors_rotated = R*[doors_x' ; doors_y'];
 doors(:,1:2) = doors_rotated';
 
 %doors(:,1:2) = doors_rotated'
@@ -243,7 +244,7 @@ for k1 = 1:length(x_ref)
         % Find close by doors
         %start_coordinates = [2590, 20710];
         pos = data(1:2)*1000;
-        range_threshold = 1000; % Search for the door inside threshold
+        range_threshold = 700; % Search for the door inside threshold
         nearby_door_right = [];
         nearby_door_left = [];
         for i = 1:length(doors(:,1))
@@ -264,6 +265,64 @@ for k1 = 1:length(x_ref)
             scan = LidarScan(lidar);
             door_detected = door_detector(nearby_door_right, nearby_door_left, scan)
         end
+        
+        % door is detected, drive to evaluate if door is open or not.
+        if door_detected(1) == 1
+            pioneer_set_controls(sp, 0, 0);
+            pause(0.3);
+            %forward
+            pioneer_set_controls(sp, 300, 0);
+            pause(1.433333);
+            pioneer_set_controls(sp, 0, 0);
+            pause(0.1);
+            %turn
+            pioneer_set_controls(sp, 0, 85);
+            pause(1);
+            pioneer_set_controls(sp, 0, 0);
+
+            % Check if door is open here
+            pause(3);
+
+            % turn back
+            pioneer_set_controls(sp, 0, -85);
+            pause(1);
+            pioneer_set_controls(sp, 0, 0);
+            pause(0.1);
+            %backward
+            pioneer_set_controls(sp, -300, 0);
+            pause(1.433333);
+            pioneer_set_controls(sp, 0, 0);
+            
+        
+        elseif door_detected(2) == 1
+            pioneer_set_controls(sp, 0, 0);
+            pause(0.3);
+            %forward
+            pioneer_set_controls(sp, 300, 0);
+            pause(1.433333);
+            pioneer_set_controls(sp, 0, 0);
+            pause(0.1);
+            %turn
+            pioneer_set_controls(sp, 0, -85);
+            pause(1);
+            pioneer_set_controls(sp, 0, 0);
+
+            % Check if door is open here
+            pause(3);
+
+            % turn back
+            pioneer_set_controls(sp, 0, 85);
+            pause(1);
+            pioneer_set_controls(sp, 0, 0);
+            pause(0.1);
+            %backward
+            pioneer_set_controls(sp, -300, 0);
+            pause(1.433333);
+            pioneer_set_controls(sp, 0, 0);
+        end
+        pause(1);
+        
+        
         
         figure(2);
         hold on;

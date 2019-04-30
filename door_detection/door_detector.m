@@ -143,35 +143,36 @@ ans = [detect_door_left, detect_door_right];
 
 %% PLOTTING. Coment out when running
 
-for n = 1:length(rightpoints(:,1)) - 2 % norm between every second point to reduce noise.  
-    % Find all norms, OBS: benches and elevator could be detected
-    norm_right(n) = norm(rightpoints(n,:) - rightpoints(n+2,:));
-end
+% for n = 1:length(rightpoints(:,1)) - 2 % norm between every second point to reduce noise.  
+%     % Find all norms, OBS: benches and elevator could be detected
+%     norm_right(n) = norm(rightpoints(n,:) - rightpoints(n+2,:));
+% end
+% 
+% for n = 1:length(leftpoints(:,1)) - 2 % norm between every second point to reduce noise.  
+%     % Find all norms, OBS: benches and elevator could be detected
+%     norm_left(n) = norm(leftpoints(n,:) - leftpoints(n+2,:));
+% end
+% 
+% 
+% % Plot rangescan and doors found
+% figure(1);
+% plot(leftpoints(:,1),leftpoints(:,2))
+% hold on
+% plot(rightpoints(:,1),rightpoints(:,2))
+% hold on
+% if L_index ~=0
+%     plot(leftpoints(L_index,1),leftpoints(L_index,2),'o')
+%     hold on
+% end
+% if R_index ~=0
+%     plot(rightpoints(R_index,1),rightpoints(R_index,2),'*')
+% end
+% hold off
+% figure(3)
+% plot(norm_left)
+% figure(4)
+% plot(norm_right)
 
-for n = 1:length(leftpoints(:,1)) - 2 % norm between every second point to reduce noise.  
-    % Find all norms, OBS: benches and elevator could be detected
-    norm_left(n) = norm(leftpoints(n,:) - leftpoints(n+2,:));
-end
-
-
-% Plot rangescan and doors found
-figure(1);
-plot(leftpoints(:,1),leftpoints(:,2))
-hold on
-plot(rightpoints(:,1),rightpoints(:,2))
-hold on
-if L_index ~=0
-    plot(leftpoints(L_index,1),leftpoints(L_index,2),'o')
-    hold on
-end
-if R_index ~=0
-    plot(rightpoints(R_index,1),rightpoints(R_index,2),'*')
-end
-hold off
-figure(3)
-plot(norm_left)
-figure(4)
-plot(norm_right)
 end
 
 
