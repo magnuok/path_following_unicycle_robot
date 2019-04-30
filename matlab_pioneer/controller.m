@@ -20,6 +20,9 @@ inflate(mapInflated, robotRadius);
 show(mapInflated)
 hold on;
 
+global doors;
+doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
+
  % TUNING VARIABLES
  radius = 0.2;
  measurment_points = 200;
@@ -47,7 +50,8 @@ hold on;
  % startLocation =  [7.19 15.89; 3.811 16.22];
  % endLocation = [3.811 16.22; 2.59 20.71];
  
-   % WHOLE PATH. NEW MAP
+ % WHOLE PATH. NEW MAP
+  start_coordinates = [2.59 20.71];
   startLocation = [2.59 20.71; 2.59 17.15; 4.37 16.07; 7.4 15; 7.01 12.41; 6.91 2.53; 7.59 1.91; 18.77 2.07; 19.43 2.55; 19.21 15.41; 18.49 16.05; 7.19 15.89; 3.811 16.22];
   endLocation = [2.59 17.15; 4.37 16.07; 7.4 15; 7.01 12.41; 6.91 2.53; 7.59 1.91; 18.77 2.07; 19.43 2.55; 19.21 15.41; 18.49 16.05; 7.19 15.89; 3.811 16.22; 2.59 20.71];
   measurment_points = 200;
@@ -127,16 +131,27 @@ y_ref = ppval(ppy, xq);
 figure(1);
 plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
 
+% DOORS
+doors_x = doors(:,1) - x(1)*1000;
+doors_y = doors(:,2) - y(1)*1000;
+
 % Start in (0,0)
 x = x - x(1);
 y = y - y(1);
 x_ref = x_ref - x_ref(1);
 y_ref = y_ref - y_ref(1);
 
+
 % Rotate points
 theta = atan2( (y_ref(2) - y_ref(1)) , (x_ref(2) - x_ref(1) ));
 R = [cos(-theta) -sin(-theta); sin(-theta) cos(-theta)];
 trajectory_rotated = R*[x_ref ; y_ref];
+
+doors_rotated = R*[doors_x' ; doors_y']
+doors(:,1:2) = doors_rotated';
+
+%doors(:,1:2) = doors_rotated'
+
 % Rotate interploation points
 interp_roateted = R*[x ; y];
 % pick out the vectors of rotated x- and y-data
@@ -156,7 +171,7 @@ theta_ref = theta_ref - theta_ref(1);
 
 trajectory_plot = figure(2);
 axis([map.XWorldLimits(1),map.XWorldLimits(2),map.YWorldLimits(1),map.YWorldLimits(2)])
-gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-','LineWidth',2);
+gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
 title('TRAJECTORY')
 hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$', 'AutoUpdate','off');
 set(hl,'Interpreter','latex')
@@ -203,7 +218,9 @@ r = robotics.Rate(20);
 sp = serial_port_start();
 %CONFIG: timer_period = 0.1. Can change to lower maybe?
 pioneer_init(sp);
-pause(1);
+lidar = SetupLidar();
+
+pause(2);
 
 for k1 = 1:length(x_ref)
     
@@ -223,6 +240,31 @@ for k1 = 1:length(x_ref)
         %v(k) = data(5);
         %w(k) = data(6);
         
+        % Find close by doors
+        %start_coordinates = [2590, 20710];
+        pos = data(1:2)*1000;
+        range_threshold = 1000; % Search for the door inside threshold
+        nearby_door_right = [];
+        nearby_door_left = [];
+        for i = 1:length(doors(:,1))
+            range = norm([doors(i,1),doors(i,2)] - pos(1:2) );
+            
+            % if it is close enough and not discovered.
+            if range < range_threshold && doors(i,4) == 0 
+                if doors(i,3) == 1
+                    nearby_door_right = [nearby_door_right ; doors(i,:), i]; % adding index because needed to change detected or not parameter to true/false
+                else
+                    nearby_door_left = [nearby_door_left ; doors(i,:), i];
+                end
+            end
+        end
+        
+        %if close to door, search for them
+        if ~isempty(nearby_door_right) || ~isempty(nearby_door_left)
+            scan = LidarScan(lidar);
+            door_detected = door_detector(nearby_door_right, nearby_door_left, scan)
+        end
+        
         figure(2);
         hold on;
         plot(pose_obs(k+1,1), pose_obs(k+1,2), 'm.');
@@ -230,8 +272,7 @@ for k1 = 1:length(x_ref)
         hold off;
         
         k=k+1;
-        disp(['iteration',num2str(k)])
-        
+        %disp(['iteration',num2str(k)])
         
         waitfor(r);
     end
@@ -242,6 +283,7 @@ end
 
 pioneer_set_controls(sp, 0, 0);
 pioneer_close(sp);
+fclose(lidar);
 stats = statistics(r)
 
 function data = loop(sp, pose_ref)
