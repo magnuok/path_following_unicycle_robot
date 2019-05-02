@@ -3,7 +3,7 @@ clear all;
 close all;
 clf;
 
-image = imread('floor_plant.jpg');
+image = imread('map_corrected.jpg');
 % Crop image to relevant area
 imageCropped = image(1:1150,1:1100);
 image = imageCropped < 100;
@@ -26,79 +26,10 @@ doors = dlmread('Doors_martim.txt'); % [x,y,bol] bol=1 right bol=0 left
  % TUNING VARIABLES
  radius = 0.2;
  measurment_points = 200;
-%%
- % PRM creates a roadmap path planner object for the environment map 
- % specified in the Map property.
- prm = robotics.PRM;
- prm.Map = mapInflated;
- prm.NumNodes = 2500;
- % ConnectionDistance is an upper threshold for points that are connected 
- % in the roadmap
+
+%path = path_planner();
  
- prm.ConnectionDistance = 3;
-
-  
- % Lab into hallway. NEW MAP 
- % startLocation = [2.59 20.71; 2.59 17.15; 4.37 16.07; 7.4 15];
- % endLocation = [2.59 17.15; 4.37 16.07; 7.4 15; 7.01 12.41];
- 
- % HALLWAY. NEW MAP
- % startLocation =  [7.01 12.41; 6.91 2.53; 7.59 1.91; 18.77 2.07; 19.43 2.55; 19.21 15.41; 18.49 16.05];
- % endLocation = [6.91 2.53; 7.59 1.91; 18.77 2.07; 19.43 2.55; 19.21 15.41; 18.49 16.05; 7.19 15.89];
-  
- % HALLWAY into LAB. NEW MAP
- % startLocation =  [7.19 15.89; 3.811 16.22];
- % endLocation = [3.811 16.22; 2.59 20.71];
- 
- % WHOLE PATH. NEW MAP
-  start_coordinates = [2.59 20.71];
-  startLocation = [2.59 20.71; 2.59 17.15; 4.37 16.07; 7.4 15; 7.01 12.41; 6.91 2.53; 7.59 1.91; 18.77 2.07; 19.43 2.55; 19.21 15.41; 18.49 16.05; 7.19 15.89; 3.811 16.22];
-  endLocation = [2.59 17.15; 4.37 16.07; 7.4 15; 7.01 12.41; 6.91 2.53; 7.59 1.91; 18.77 2.07; 19.43 2.55; 19.21 15.41; 18.49 16.05; 7.19 15.89; 3.811 16.22; 2.59 20.71];
-  measurment_points = 200;
-  
-  
- % Search for a solution between start and end location.
- % Continue to add nodes until a path is found.
- path = [];
- 
- for i = 1:size(startLocation, 1)
-     % path matrix containing [x,y] points
-     sub_path = findpath(prm, startLocation(i,:), endLocation(i,:));
-
-     % if path is not found, add more nodes
-    iterations = 1;
-    while isempty(sub_path)
-        % Can tune this to add more each round
-        prm.NumNodes = prm.NumNodes + 500;
-        update(prm);
-        sub_path = findpath(prm, startLocation(i,:), endLocation(i,:));
-        fprintf('Iteration: %i\n', iterations);
-        iterations = iterations+1;
-    end
-    
-    path = [path ; sub_path];
-    show(prm)
-    hold on;
- end
- 
-disp('Found path');
-
-show(prm)
-hold on;
-
-% Removing extraneous nodes to be interpolated
-j = 1;
-while j < length(path)
-    if(norm( path(j,1:2) - path(j+1,1:2) ) > 1)
-        j = j+1;
-    else
-        path(j+1,:) = [];
-        j = 1;
-    end
-
-end
-
-%% INTERPOLATION AND PLOTS
+% INTERPOLATION AND PLOTS
 
 path = dlmread('path_nice_corrected.txt');
 
@@ -132,7 +63,7 @@ figure(1);
 plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
 plot(doors(:,1)/1000, doors(:,2)/1000, '*');
 
-% DOORS
+% Doors
 doors_x = doors(:,1) - x(1)*1000;
 doors_y = doors(:,2) - y(1)*1000;
 
@@ -142,7 +73,6 @@ y = y - y(1);
 x_ref = x_ref - x_ref(1);
 y_ref = y_ref - y_ref(1);
 
-
 % Rotate points
 theta = atan2( (y_ref(2) - y_ref(1)) , (x_ref(2) - x_ref(1) ));
 R = [cos(-theta) -sin(-theta); sin(-theta) cos(-theta)];
@@ -150,8 +80,6 @@ trajectory_rotated = R*[x_ref ; y_ref];
 
 doors_rotated = R*[doors_x' ; doors_y'];
 doors(:,1:2) = doors_rotated';
-
-%doors(:,1:2) = doors_rotated'
 
 % Rotate interploation points
 interp_roateted = R*[x ; y];
@@ -201,6 +129,7 @@ hold on;
 pose(1,:) = [x_ref(1), y_ref(1), theta_ref(1)];
 
 % observed position
+pose_obs = zeros(100000, 3);
 pose_obs(1,:) = pose(1,:);
 
 % Data for plotting, if needed
@@ -235,18 +164,14 @@ for k1 = 1:length(x_ref)
         data = loop(sp, pose_ref);
         
         pose_obs(k+1,:) = data(1:3);
-        %e(k) = data(2);
-        %thet(k) = data(3);
-        %alpha(k) = data(4);
-        %v(k) = data(5);
-        %w(k) = data(6);
-        
+
         % Find close by doors
         %start_coordinates = [2590, 20710];
         pos = data(1:2)*1000;
-        range_threshold = 700; % Search for the door inside threshold
+        range_threshold = 1000; % Search for the door inside threshold
         nearby_door_right = [];
         nearby_door_left = [];
+        door_detected = [0 0];
         for i = 1:length(doors(:,1))
             range = norm([doors(i,1),doors(i,2)] - pos(1:2) );
             
@@ -276,15 +201,16 @@ for k1 = 1:length(x_ref)
             pioneer_set_controls(sp, 0, 0);
             pause(0.1);
             %turn
-            pioneer_set_controls(sp, 0, 85);
+            pioneer_set_controls(sp, 0, -85);
             pause(1);
             pioneer_set_controls(sp, 0, 0);
 
             % Check if door is open here
+            % Fransiscos function in here
             pause(3);
 
             % turn back
-            pioneer_set_controls(sp, 0, -85);
+            pioneer_set_controls(sp, 0, 85);
             pause(1);
             pioneer_set_controls(sp, 0, 0);
             pause(0.1);
@@ -292,7 +218,7 @@ for k1 = 1:length(x_ref)
             pioneer_set_controls(sp, -300, 0);
             pause(1.433333);
             pioneer_set_controls(sp, 0, 0);
-            
+            pause(1);
         
         elseif door_detected(2) == 1
             pioneer_set_controls(sp, 0, 0);
@@ -303,15 +229,16 @@ for k1 = 1:length(x_ref)
             pioneer_set_controls(sp, 0, 0);
             pause(0.1);
             %turn
-            pioneer_set_controls(sp, 0, -85);
+            pioneer_set_controls(sp, 0, 85);
             pause(1);
             pioneer_set_controls(sp, 0, 0);
 
             % Check if door is open here
+            % Fransiscos function in here
             pause(3);
 
             % turn back
-            pioneer_set_controls(sp, 0, 85);
+            pioneer_set_controls(sp, 0, -85);
             pause(1);
             pioneer_set_controls(sp, 0, 0);
             pause(0.1);
@@ -319,16 +246,15 @@ for k1 = 1:length(x_ref)
             pioneer_set_controls(sp, -300, 0);
             pause(1.433333);
             pioneer_set_controls(sp, 0, 0);
+            pause(1);
         end
-        pause(1);
         
         
-        
-        figure(2);
-        hold on;
-        plot(pose_obs(k+1,1), pose_obs(k+1,2), 'm.');
-        drawnow;
-        hold off;
+        %figure(2);
+        %hold on;
+        %plot(pose_obs(k+1,1), pose_obs(k+1,2), 'm.');
+        %drawnow;
+        %hold off;
         
         k=k+1;
         %disp(['iteration',num2str(k)])
@@ -355,7 +281,6 @@ function data = loop(sp, pose_ref)
 
     % READ ODOMETRY HERE to get pose_obs
     pose_obs = pioneer_read_odometry();
-    
     
     %convert to meter from mm and robots angular
     pose_obs(1) = pose_obs(1)/1000;
