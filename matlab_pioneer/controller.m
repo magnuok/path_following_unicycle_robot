@@ -21,7 +21,7 @@ show(mapInflated)
 hold on;
 
 global doors;
-doors = dlmread('Doors_martim.txt'); % [x,y,bol] bol=1 right bol=0 left
+doors = dlmread('doors_without_corner_doors.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
  radius = 0.2;
@@ -209,6 +209,7 @@ for k1 = 1:length(x_ref)
 
             % Check if door is open here
             % Fransiscos function in here
+            distance_to_door = scan(30);
             pause(3);
 
             % turn back
@@ -237,6 +238,7 @@ for k1 = 1:length(x_ref)
 
             % Check if door is open here
             % Fransiscos function in here
+            distance_to_door = scan(210);
             pause(3);
 
             % turn back
