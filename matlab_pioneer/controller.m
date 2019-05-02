@@ -3,9 +3,9 @@ clear all;
 close all;
 clf;
 
-image = imread('map_corrected.jpg');
+image = imread('floor_plant_1.jpg');
 % Crop image to relevant area
-imageCropped = image(1:1150,1:1100);
+imageCropped = image(1:1150,1:1150);
 image = imageCropped < 100;
 % create occupancy grid. Free space is 0, for occupied space is 1
 % .yaml: Resolution of the map, meters / pixel = 0.020000
@@ -110,6 +110,7 @@ set(gg,"Fontsize",14);
 gg=ylabel("y - [m]");
 set(gg,"Fontsize",14);
 
+% Plotting reference circle around each point
 for i = 1:length(x_ref)
     %// center
     c = [x_ref(i) y_ref(i)];
@@ -129,7 +130,7 @@ hold on;
 pose(1,:) = [x_ref(1), y_ref(1), theta_ref(1)];
 
 % observed position
-pose_obs = zeros(100000, 3);
+%pose_obs = zeros(100000, 3);
 pose_obs(1,:) = pose(1,:);
 
 % Data for plotting, if needed
@@ -168,10 +169,11 @@ for k1 = 1:length(x_ref)
         % Find close by doors
         %start_coordinates = [2590, 20710];
         pos = data(1:2)*1000;
-        range_threshold = 1000; % Search for the door inside threshold
+        range_threshold = 1500; % Search for the door inside threshold
         nearby_door_right = [];
         nearby_door_left = [];
         door_detected = [0 0];
+        
         for i = 1:length(doors(:,1))
             range = norm([doors(i,1),doors(i,2)] - pos(1:2) );
             
@@ -194,7 +196,7 @@ for k1 = 1:length(x_ref)
         % door is detected, drive to evaluate if door is open or not.
         if door_detected(1) == 1
             pioneer_set_controls(sp, 0, 0);
-            pause(0.3);
+            pause(1);
             %forward
             pioneer_set_controls(sp, 300, 0);
             pause(1.433333);
@@ -222,7 +224,7 @@ for k1 = 1:length(x_ref)
         
         elseif door_detected(2) == 1
             pioneer_set_controls(sp, 0, 0);
-            pause(0.3);
+            pause(1);
             %forward
             pioneer_set_controls(sp, 300, 0);
             pause(1.433333);
@@ -242,7 +244,7 @@ for k1 = 1:length(x_ref)
             pause(1);
             pioneer_set_controls(sp, 0, 0);
             pause(0.1);
-            %backward
+            % backward
             pioneer_set_controls(sp, -300, 0);
             pause(1.433333);
             pioneer_set_controls(sp, 0, 0);
