@@ -169,7 +169,7 @@ for k1 = 1:length(x_ref)
         % Find close by doors
         %start_coordinates = [2590, 20710];
         pos = data(1:2)*1000;
-        range_threshold = 1500; % Search for the door inside threshold
+        range_threshold = 1000; % Search for the door inside threshold
         nearby_door_right = [];
         nearby_door_left = [];
         door_detected = [0 0];
@@ -180,9 +180,9 @@ for k1 = 1:length(x_ref)
             % if it is close enough and not discovered.
             if range < range_threshold && doors(i,4) == 0 
                 if doors(i,3) == 1
-                    nearby_door_right = [nearby_door_right ; doors(i,:), i]; % adding index because needed to change detected or not parameter to true/false
+                    nearby_door_right = [doors(i,:), i]; % adding index because needed to change detected or not parameter to true/false
                 else
-                    nearby_door_left = [nearby_door_left ; doors(i,:), i];
+                    nearby_door_left = [doors(i,:), i]; 
                 end
             end
         end
@@ -209,7 +209,39 @@ for k1 = 1:length(x_ref)
 
             % Check if door is open here
             % Fransiscos function in here
-            distance_to_door = scan(30);
+            % in meter
+            distance_to_door = scan(30)/1000;
+            
+            %% Correct path with measured error
+             
+%             error = distance_to_door - doors(nearby_door_right(2), 5);    
+%             % x-direction
+%             if (doors(nearby_door_right(2), 6) == 1)
+%                 
+%                 % add in x-direction
+%                 if (doors(nearby_door_right(2), 7) == 1)
+%                     
+%                     x_ref = x_ref + error;
+%                 % subtract in x-direction
+%                 else
+%                     x_ref = x_ref - error
+%                     
+%                 end
+%             % y-direction
+%             else
+%                 % add in y-direction
+%                 if (doors(nearby_door_right(2), 7) == 1)
+%                     
+%                     y_ref = y_ref + error;
+%                 % subtract in y-direction
+%                 else
+%                     y_ref = y_ref - error;
+%                     
+%                 end
+%             end
+            
+            %%
+            
             pause(3);
 
             % turn back
@@ -238,7 +270,35 @@ for k1 = 1:length(x_ref)
 
             % Check if door is open here
             % Fransiscos function in here
-            distance_to_door = scan(210);
+            distance_to_door = scan(210)/1000;
+            
+            %% Correct path with measured error
+%             error = distance_to_door - doors(nearby_door_right(2), 5);    
+%             % x-direction
+%             if (doors(nearby_door_right(2), 6) == 1)
+%                 
+%                 % add in x-direction
+%                 if (doors(nearby_door_right(2), 7) == 1)
+%                     
+%                     x_ref = x_ref + error;
+%                 % subtract in x-direction
+%                 else
+%                     x_ref = x_ref - error
+%                     
+%                 end
+%             % y-direction
+%             else
+%                 % add in y-direction
+%                 if (doors(nearby_door_right(2), 7) == 1)
+%                     
+%                     y_ref = y_ref + error;
+%                 % subtract in y-direction
+%                 else
+%                     y_ref = y_ref - error;
+%                     
+%                 end
+%             end
+            %%
             pause(3);
 
             % turn back
@@ -251,6 +311,14 @@ for k1 = 1:length(x_ref)
             pause(1.433333);
             pioneer_set_controls(sp, 0, 0);
             pause(1);
+        end
+        
+        
+        % Special case for corner doors facing striaght forward
+        if norm([5.02, 18.36] - pos(1:2)) < 0.2 || norm([18.74, 5.13] - pos(1:2)) < 0.2
+           pioneer_set_controls(sp, 0, 0);
+           pause(3);
+           
         end
         
         
@@ -284,7 +352,7 @@ function data = loop(sp, pose_ref)
     v_max = 1.1;
 
     % READ ODOMETRY HERE to get pose_obs
-    pose_obs = pioneer_read_odometry();
+    pose_obs = pioneer_read_odometry(); % offset
     
     %convert to meter from mm and robots angular
     pose_obs(1) = pose_obs(1)/1000;

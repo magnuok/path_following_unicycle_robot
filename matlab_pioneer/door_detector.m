@@ -21,7 +21,7 @@ leftpoints = []; % [x,y]
 rightpoints = [];
 
 % Søker bare for 1 meter frem her.
-search_range = 1500;
+search_range = 1000;
 
 % deler opp i venstre og høyre liste
 for i = 1:length(x)
