@@ -21,7 +21,7 @@ show(mapInflated)
 hold on;
 
 global doors;
-doors = dlmread('doors_without_corner_doors.txt'); % [x,y,bol] bol=1 right bol=0 left
+doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
  radius = 0.2;
@@ -102,7 +102,7 @@ trajectory_plot = figure(2);
 axis([map.XWorldLimits(1),map.XWorldLimits(2),map.YWorldLimits(1),map.YWorldLimits(2)])
 gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
 title('TRAJECTORY')
-hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$', 'AutoUpdate','off');
+hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$','$Door coordinates (x,y)$' ,  'AutoUpdate','off');
 set(hl,'Interpreter','latex')
 set(gg,"LineWidth",1.5)
 gg=xlabel("x - [m]");
@@ -213,6 +213,8 @@ for k1 = 1:length(x_ref)
             distance_to_door = scan(30)/1000;
             
             %% Correct path with measured error
+            
+            % THINK WE HAVE TO COORECT THE DOORS ASWELL?
              
 %             error = distance_to_door - doors(nearby_door_right(2), 5);    
 %             % x-direction
