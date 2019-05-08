@@ -208,6 +208,7 @@ for k1 = 1:length(x_ref)
             pioneer_set_controls(sp, 0, 0);
 
             % Check if door is open here
+            door_state=Doors;
             % Fransiscos function in here
             % in meter
             distance_to_door = scan(30)/1000;
@@ -216,31 +217,32 @@ for k1 = 1:length(x_ref)
             
             % THINK WE HAVE TO COORECT THE DOORS ASWELL?
              
-%             error = distance_to_door - doors(nearby_door_right(2), 5);    
-%             % x-direction
-%             if (doors(nearby_door_right(2), 6) == 1)
-%                 
-%                 % add in x-direction
-%                 if (doors(nearby_door_right(2), 7) == 1)
-%                     
-%                     x_ref = x_ref + error;
-%                 % subtract in x-direction
-%                 else
-%                     x_ref = x_ref - error
-%                     
-%                 end
-%             % y-direction
-%             else
-%                 % add in y-direction
-%                 if (doors(nearby_door_right(2), 7) == 1)
-%                     
-%                     y_ref = y_ref + error;
-%                 % subtract in y-direction
-%                 else
-%                     y_ref = y_ref - error;
-%                     
-%                 end
-%             end
+            error = distance_to_door - doors(nearby_door_right(2), 5);    
+            % x-direction
+            if (doors(nearby_door_right(2), 6) == 0)
+                
+                % add in x-direction
+                if (doors(nearby_door_right(2), 7) == 1)
+                    
+                    x_ref = x_ref + error;
+
+                % subtract in x-direction
+                else
+                    x_ref = x_ref - error;
+                    
+                end
+            % y-direction
+            else
+                % add in y-direction
+                if (doors(nearby_door_right(2), 7) == 1)
+                    
+                    y_ref = y_ref + error;
+                % subtract in y-direction
+                else
+                    y_ref = y_ref - error;
+                    
+                end
+            end
             
             %%
             
