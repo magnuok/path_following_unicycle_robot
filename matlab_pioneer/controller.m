@@ -208,11 +208,9 @@ for k1 = 1:length(x_ref)
             pioneer_set_controls(sp, 0, 0);
 
             % Check if door is open here
-            door_state=Doors;
-            % Fransiscos function in here
-            % in meter
-            distance_to_door = scan(30)/1000;
-            
+            distance_to_wall = scan(30)/1000;
+            scan = LidarScan(lidar);
+            door_state=Doors(scan,distance_to_wall);
             %% Correct path with measured error
             
             % THINK WE HAVE TO COORECT THE DOORS ASWELL?
