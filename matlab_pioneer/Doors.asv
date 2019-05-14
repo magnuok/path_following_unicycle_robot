@@ -15,12 +15,11 @@ function door_state = Doors(scan,distance_to_wall)
     end
     dist=dist/(1000*b);
     
-    %If needed, change 0.6 for distance_to_wall
+    %If needed, change 0.6 for dis
     if dist < 0.6
         door_state=-1;
         soundsc(signalclose,Fs);
         pause(4);
-        %If needed, change 0.6 for distance_to_wall +0.5
         elseif dist > 1
             door_state=1;
             soundsc(signalopen,Fs);
