@@ -38,7 +38,7 @@ y = path(:,2)';
 
 % Make sure elements are distinct for interpolating
 for i = 1:length(x)
-    for j = 1:length(x)
+    for j = 1:length(x) 
         if (x(i) == x(j) && i~=j)
             x(j) = x(j) + 0.0001;
         end
