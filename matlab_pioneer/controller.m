@@ -2,7 +2,7 @@
 clear all;
 close all;
 clf;
-
+%lidar=SetupLidar();
 image = imread('floor_plant_1.jpg');
 % Crop image to relevant area
 imageCropped = image(1:1150,1:1150);
@@ -149,7 +149,7 @@ r = robotics.Rate(20);
 sp = serial_port_start();
 %CONFIG: timer_period = 0.1. Can change to lower maybe?
 pioneer_init(sp);
-pplidar = SetupLidar();
+lidar = SetupLidar();
 
 pause(2);
 

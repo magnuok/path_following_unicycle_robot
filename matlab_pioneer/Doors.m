@@ -9,19 +9,19 @@ function door_state = Doors(scan,distance_to_wall)
 
     dist=0;
     b=0;
-     for i=310:1:390
+     for i=325:1:375
          b=b+1;
         dist=dist+scan(i:i);
     end
     dist=dist/(1000*b)
     
     %If needed, change 0.6 for distance_to_wall
-    if dist < distance_to_wall
+    if dist < distance_to_wall + 0.1
         door_state=-1;
         soundsc(signalclose,Fs);
         pause(2);
         %If needed, change 1 for distance_to_wall +0.5
-        elseif dist > distance_to_wall + 0.5
+        elseif dist > distance_to_wall + 0.4
             door_state=1;
             soundsc(signalopen,Fs);
             pause(2);
