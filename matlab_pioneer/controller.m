@@ -21,7 +21,7 @@ show(mapInflated)
 hold on;
 
 global doors;
-doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
+doors = dlmread('doors_without_corner_doors.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
  radius = 0.2;
@@ -149,7 +149,7 @@ r = robotics.Rate(20);
 sp = serial_port_start();
 %CONFIG: timer_period = 0.1. Can change to lower maybe?
 pioneer_init(sp);
-lidar = SetupLidar();
+pplidar = SetupLidar();
 
 pause(2);
 
@@ -208,39 +208,39 @@ for k1 = 1:length(x_ref)
             pioneer_set_controls(sp, 0, 0);
 
             % Check if door is open here
-            distance_to_wall = scan(30)/1000;
+            distance_to_wall = scan(85)/1000
             scan = LidarScan(lidar);
             door_state=Doors(scan,distance_to_wall);
-            %% Correct path with measured error
-            
-            % THINK WE HAVE TO COORECT THE DOORS ASWELL?
-             
-            error = distance_to_door - doors(nearby_door_right(2), 5);    
-            % x-direction
-            if (doors(nearby_door_right(2), 6) == 0)
-                
-                % add in x-direction
-                if (doors(nearby_door_right(2), 7) == 1)
-                    
-                    x_ref = x_ref + error;
-
-                % subtract in x-direction
-                else
-                    x_ref = x_ref - error;
-                    
-                end
-            % y-direction
-            else
-                % add in y-direction
-                if (doors(nearby_door_right(2), 7) == 1)
-                    
-                    y_ref = y_ref + error;
-                % subtract in y-direction
-                else
-                    y_ref = y_ref - error;
-                    
-                end
-            end
+%             %% Correct path with measured error
+%             
+%             % THINK WE HAVE TO COORECT THE DOORS ASWELL?
+%              
+%             error = distance_to_door - doors(nearby_door_right(2), 5);    
+%             % x-direction
+%             if (doors(nearby_door_right(2), 6) == 0)
+%                 
+%                 % add in x-direction
+%                 if (doors(nearby_door_right(2), 7) == 1)
+%                     
+%                     x_ref = x_ref + error;
+% 
+%                 % subtract in x-direction
+%                 else
+%                     x_ref = x_ref - error;
+%                     
+%                 end
+%             % y-direction
+%             else
+%                 % add in y-direction
+%                 if (doors(nearby_door_right(2), 7) == 1)
+%                     
+%                     y_ref = y_ref + error;
+%                 % subtract in y-direction
+%                 else
+%                     y_ref = y_ref - error;
+%                     
+%                 end
+%             end
             
             %%
             
@@ -272,8 +272,11 @@ for k1 = 1:length(x_ref)
 
             % Check if door is open here
             % Fransiscos function in here
-            distance_to_door = scan(210)/1000;
-            
+            % esquerda 587
+            % direita 85
+            distance_to_wall = scan(587)/1000
+            scan = LidarScan(lidar);
+            door_state=Doors(scan,distance_to_wall);
             %% Correct path with measured error
 %             error = distance_to_door - doors(nearby_door_right(2), 5);    
 %             % x-direction
