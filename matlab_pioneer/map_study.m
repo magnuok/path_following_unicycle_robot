@@ -1,5 +1,5 @@
 figure(5);
-image_2 = imread('map_corrected.jpg');
+image_2 = imread('floor_plant_1.jpg');
 % Crop image to relevant area
 imageCropped_2 = image_2(1:1150,1:1100);
 

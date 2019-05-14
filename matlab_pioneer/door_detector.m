@@ -71,7 +71,7 @@ if ~isempty(nearby_door_right)
     % want a DOOR event to occur, and list the door as detected
     if norm(first_doorframe_pos(2)) > 0 && norm(first_doorframe_pos(2)) < door_distance
         R_index = index; % used for plotting
-        set_door_detected(nearby_door_right(5));
+        set_door_detected(nearby_door_right(8));
         detect_door_right = true; % SET GLOBAL RIGHT DOOR TO TRUE
     end
     
@@ -99,7 +99,7 @@ if ~isempty(nearby_door_left)
 
     if norm(first_doorframe_pos(2)) > 0 && norm(first_doorframe_pos(2)) < door_distance
         L_index = index;
-        set_door_detected(nearby_door_left(5));
+        set_door_detected(nearby_door_left(8));
         detect_door_left = true; % SET GLOBAL LEFT DOOR TO TRUE
     end
 end

@@ -286,7 +286,7 @@ for k1 = 1:length(x_ref)
                 if (doors(i, 7) == 1)
                     
                     x_ref = x_ref + error;
-                    
+
                 % subtract in x-direction
                 else
                     x_ref = x_ref - error;
@@ -357,11 +357,11 @@ function data = loop(sp, pose_ref)
     K3 = 1.5;
     v_max = 1.1;
     
-%     offset_x = 
+    offset_x = new
 
     % READ ODOMETRY HERE to get pose_obs
     pose_obs = pioneer_read_odometry(); % offset
-%     pose_obs(1)= pose(1)+ offset_x
+    
     %convert to meter from mm and robots angular
     pose_obs(1) = pose_obs(1)/1000;
     pose_obs(2) = pose_obs(2)/1000;
