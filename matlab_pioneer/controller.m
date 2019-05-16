@@ -31,7 +31,7 @@ doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
  
 % INTERPOLATION AND PLOTS
 
-path = dlmread('path_nice_corrected.txt');
+path = dlmread('path_nice_corrected_2.txt');
 
 x = path(:,1)';
 y = path(:,2)';
@@ -190,6 +190,7 @@ for k1 = 1:length(x_ref)
         %if close to door, search for them
         if ~isempty(nearby_door_right) || ~isempty(nearby_door_left)
             scan = LidarScan(lidar);
+%             scan_array(i)= scan;
             door_detected = door_detector(nearby_door_right, nearby_door_left, scan)
         end
         
@@ -210,34 +211,41 @@ for k1 = 1:length(x_ref)
             % Check if door is open here
             distance_to_wall = scan(85)/1000
             scan = LidarScan(lidar);
+%             scan_array(i+1)= scan;
             door_state=Doors(scan,distance_to_wall);
 %             %% Correct path with measured error
 %             
 %             % THINK WE HAVE TO COORECT THE DOORS ASWELL?
 %              
             error = distance_to_wall - doors(i, 5);    
+            
             % x-direction
             if (doors(i, 6) == 0)
                 
                 % add in x-direction
                 if (doors(i, 7) == 1)
-                    
-                    x_ref = x_ref + error;
-
+                    for a=1:10
+                    x_ref(k1+a) = x_ref(k1+a) + error;
+                    end
                 % subtract in x-direction
                 else
-                    x_ref = x_ref - error;
-                    
+                    for a=1:10
+                    x_ref(k1+a) = x_ref(k1+a) - error;
+                    end
                 end
             % y-direction
             else
                 % add in y-direction
                 if (doors(i, 7) == 1)
+                    for a=1:10
+                    y_ref(k1+a) = y_ref(k1+a) + error;
+                    end
                     
-                    y_ref = y_ref + error;
                 % subtract in y-direction
                 else
-                    y_ref = y_ref - error;
+                    for a=1:10
+                    y_ref(k1+a) = y_ref(k1+a) - error;
+                    end
                     
                 end
             end
@@ -284,23 +292,28 @@ for k1 = 1:length(x_ref)
                 
                 % add in x-direction
                 if (doors(i, 7) == 1)
-                    
-                    x_ref = x_ref + error;
-                    
+                    for a=1:10
+                    x_ref(k1+a) = x_ref(k1+a) + error;
+                    end
                 % subtract in x-direction
                 else
-                    x_ref = x_ref - error;
-                    
+                    for a=1:10
+                    x_ref(k1+a) = x_ref(k1+a) - error;
+                    end
                 end
             % y-direction
             else
                 % add in y-direction
                 if (doors(i, 7) == 1)
+                    for a=1:10
+                    y_ref(k1+a) = y_ref(k1+a) + error;
+                    end
                     
-                    y_ref = y_ref + error;
                 % subtract in y-direction
                 else
-                    y_ref = y_ref - error;
+                    for a=1:10
+                    y_ref(k1+a) = y_ref(k1+a) - error;
+                    end
                     
                 end
             end
@@ -328,11 +341,11 @@ for k1 = 1:length(x_ref)
         end
         
         
-        %figure(2);
-        %hold on;
-        %plot(pose_obs(k+1,1), pose_obs(k+1,2), 'm.');
-        %drawnow;
-        %hold off;
+%         figure(2);
+%         hold on;
+%         plot(pose_obs(k+1,1), pose_obs(k+1,2), 'm.');
+%         drawnow;
+%         hold off;
         
         k=k+1;
         %disp(['iteration',num2str(k)])
