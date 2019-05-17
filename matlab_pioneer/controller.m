@@ -140,6 +140,7 @@ alpha = [];
 v = [];
 w = [];
 
+
 % iteration counter
 k = 1;
 
@@ -190,7 +191,7 @@ for k1 = 1:length(x_ref)
         %if close to door, search for them
         if ~isempty(nearby_door_right) || ~isempty(nearby_door_left)
             scan = LidarScan(lidar);
-%             scan_array(i)= scan;
+%             scan_array(l)= scan;
             door_detected = door_detector(nearby_door_right, nearby_door_left, scan)
         end
         
@@ -210,15 +211,15 @@ for k1 = 1:length(x_ref)
 
             % Check if door is open here
             scan_aux=scan(40:125);
-            for i=1:1:length(scan_aux)
-                if scan_aux(i) < 10
-                    scan_aux(i)=5000;
+            for l=1:1:length(scan_aux)
+                if scan_aux(l) < 10
+                    scan_aux(l)=5000;
                 end
             end
             
             distance_to_wall = min(scan_aux)/1000;
             scan = LidarScan(lidar);
-%             scan_array(i+1)= scan;
+%             scan_array(l+1)= scan;
             door_state=Doors(scan,distance_to_wall);
 %             %% Correct path with measured error
 %             
@@ -231,12 +232,12 @@ for k1 = 1:length(x_ref)
 %                 
 %                 % add in x-direction
 %                 if (doors(i, 7) == 1)
-%                     for a=1:10
+%                     for a=1:5
 %                     x_ref(k1+a) = x_ref(k1+a) + error;
 %                     end
 %                 % subtract in x-direction
 %                 else
-%                     for a=1:10
+%                     for a=1:5
 %                     x_ref(k1+a) = x_ref(k1+a) - error;
 %                     end
 %                 end
@@ -244,13 +245,13 @@ for k1 = 1:length(x_ref)
 %             else
 %                 % add in y-direction
 %                 if (doors(i, 7) == 1)
-%                     for a=1:10
+%                     for a=1:5
 %                     y_ref(k1+a) = y_ref(k1+a) + error;
 %                     end
 %                     
 %                 % subtract in y-direction
 %                 else
-%                     for a=1:10
+%                     for a=1:5
 %                     y_ref(k1+a) = y_ref(k1+a) - error;
 %                     end
 %                     
@@ -291,9 +292,9 @@ for k1 = 1:length(x_ref)
             % direita 85
              % Check if door is open here
             scan_aux=scan(547:627);
-            for i=1:1:length(scan_aux)
-                if scan_aux(i) < 10
-                    scan_aux(i)=5000;
+            for l=1:1:length(scan_aux)
+                if scan_aux(l) < 10
+                    scan_aux(l)=5000;
                 end
             end
             
@@ -312,12 +313,12 @@ for k1 = 1:length(x_ref)
 %                 
 %                 % add in x-direction
 %                 if (doors(i, 7) == 1)
-%                     for a=1:10
+%                     for a=1:5
 %                     x_ref(k1+a) = x_ref(k1+a) + error;
 %                     end
 %                 % subtract in x-direction
 %                 else
-%                     for a=1:10
+%                     for a=1:5
 %                     x_ref(k1+a) = x_ref(k1+a) - error;
 %                     end
 %                 end
@@ -325,13 +326,13 @@ for k1 = 1:length(x_ref)
 %             else
 %                 % add in y-direction
 %                 if (doors(i, 7) == 1)
-%                     for a=1:10
+%                     for a=1:5
 %                     y_ref(k1+a) = y_ref(k1+a) + error;
 %                     end
 %                     
 %                 % subtract in y-direction
 %                 else
-%                     for a=1:10
+%                     for a=1:5
 %                     y_ref(k1+a) = y_ref(k1+a) - error;
 %                     end
 %                     
