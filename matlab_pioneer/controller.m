@@ -209,7 +209,14 @@ for k1 = 1:length(x_ref)
             pioneer_set_controls(sp, 0, 0);
 
             % Check if door is open here
-            distance_to_wall = scan(85)/1000
+            scan_aux=scan(40:125);
+            for i=1:1:length(scan_aux)
+                if scan_aux(i) < 10
+                    scan_aux(i)=5000;
+                end
+            end
+            
+            distance_to_wall = min(scan_aux)/1000;
             scan = LidarScan(lidar);
 %             scan_array(i+1)= scan;
             door_state=Doors(scan,distance_to_wall);
@@ -282,7 +289,20 @@ for k1 = 1:length(x_ref)
             % Fransiscos function in here
             % esquerda 587
             % direita 85
-            distance_to_wall = scan(587)/1000
+             % Check if door is open here
+            scan_aux=scan(547:627);
+            for i=1:1:length(scan_aux)
+                if scan_aux(i) < 10
+                    scan_aux(i)=5000;
+                end
+            end
+            
+            distance_to_wall = min(scan_aux)/1000;
+            
+            
+            
+            
+            %distance_to_wall = scan(587)/1000
             scan = LidarScan(lidar);
             door_state=Doors(scan,distance_to_wall);
             %% Correct path with measured error
