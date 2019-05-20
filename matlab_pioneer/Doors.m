@@ -21,7 +21,7 @@ function door_state = Doors(scan,distance_to_wall)
        
     end
     dista=dista/(1000*b)
-    dist2=median(door)
+    dist2=median(door);
     
     %If needed, change 0.6 for distance_to_wall
 

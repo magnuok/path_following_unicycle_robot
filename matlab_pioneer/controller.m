@@ -170,7 +170,7 @@ for k1 = 1:length(x_ref)
         % Find close by doors
         %start_coordinates = [2590, 20710];
         pos = data(1:2)*1000;
-        range_threshold = 1000; % Search for the door inside threshold
+        range_threshold = 1200; % Search for the door inside threshold
         nearby_door_right = [];
         nearby_door_left = [];
         door_detected = [0 0];
@@ -181,12 +181,15 @@ for k1 = 1:length(x_ref)
             % if it is close enough and not discovered.
             if range < range_threshold && doors(i,4) == 0 
                 if doors(i,3) == 1
-                    nearby_door_right = [doors(i,:), i]; % adding index because needed to change detected or not parameter to true/false
+                    nearby_door_right = [doors(i,:), i];% adding index because needed to change detected or not parameter to true/false
+                    d_i= i
                 else
                     nearby_door_left = [doors(i,:), i]; 
+                    d_i= i
                 end
             end
         end
+
         
         %if close to door, search for them
         if ~isempty(nearby_door_right) || ~isempty(nearby_door_left)
@@ -208,7 +211,7 @@ for k1 = 1:length(x_ref)
             pioneer_set_controls(sp, 0, -85);
             pause(1);
             pioneer_set_controls(sp, 0, 0);
-
+            pause(1);
             % Check if door is open here
             scan_aux=scan(40:125);
             for l=1:1:length(scan_aux)
@@ -217,47 +220,69 @@ for k1 = 1:length(x_ref)
                 end
             end
             
-            distance_to_wall = min(scan_aux)/1000;
+            distance_to_wall = min(scan_aux)/1000
             scan = LidarScan(lidar);
 %             scan_array(l+1)= scan;
             door_state=Doors(scan,distance_to_wall);
 %             %% Correct path with measured error
 %             
 %             % THINK WE HAVE TO COORECT THE DOORS ASWELL?
-%              
-             error = distance_to_wall - doors(i, 5)    
-%             
+             d_i
+             error = distance_to_wall - doors(d_i, 5);
+%            
 %             % x-direction
-            if (doors(i, 6) == 0)
+            if (doors(d_i, 6) == 0)
                 
                 % add in x-direction
-                if (doors(i, 7) == 1)
-                    x_ref = x_ref + error;
-                    doors(:,1) = doors(:,1) + error;
+                if (doors(d_i, 7) == 1)
+                    x_ref
+                    error
+                    x_ref = x_ref + error; % ADD IN MILLI!!
+                    pose_ref(1) = pose_ref(1) + error;
+                    x_ref
+                    doors(:,1) = doors(:,1) + 1000*error;
                 % subtract in x-direction
                 else
+                    x_ref
+                    error
                     x_ref = x_ref - error;
-                    doors(:,1) = doors(:,1) - error;
+                    pose_ref(1) = pose_ref(1) - error;
+                    x_ref
+                    doors(:,1) = doors(:,1) - 1000*error;
                 end
             % y-direction
             else
                 % add in y-direction
-                if (doors(i, 7) == 1)
-                   
+                if (doors(d_i, 7) == 1)
+                    y_ref
+                    error
                     y_ref = y_ref + error;
-                    doors(:,2) = doors(:,2) + error;
+                    doors(:,2) = doors(:,2) + 1000*error;
                     
                 % subtract in y-direction
                 else
-                    
+                    y_ref
+                    error
                     y_ref = y_ref - error;
-                    doors(:,2) = doors(:,2) - error;
+                    doors(:,2) = doors(:,2) - 1000*error;
                     
                 end
             end
             
-            %
-            
+%             
+            if error > 0 
+                speeder=100;
+                time_error=((error*1000)/100)-0.5; 
+            else
+                speeder=-100;
+                time_error=((-error*1000)/100)-0.5;
+            end
+            pause(1);
+            pioneer_set_controls(sp, speeder, 0);
+            pause(time_error);
+            pioneer_set_controls(sp, 0, 0);
+            pause(0.1);
+%             
             pause(3);
 
             % turn back
@@ -283,7 +308,7 @@ for k1 = 1:length(x_ref)
             pioneer_set_controls(sp, 0, 85);
             pause(1);
             pioneer_set_controls(sp, 0, 0);
-
+            pause(1);
             % Check if door is open here
             % Fransiscos function in here
             % esquerda 587
@@ -305,37 +330,58 @@ for k1 = 1:length(x_ref)
             scan = LidarScan(lidar);
             door_state=Doors(scan,distance_to_wall);
             %% Correct path with measured error
-             error = distance_to_wall - doors(i, 5)    
+            d_i
+             error = distance_to_wall - doors(d_i, 5)    
             % x-direction
-             if (doors(i, 6) == 0)
+             if (doors(d_i, 6) == 0)
                 
                 % add in x-direction
-                if (doors(i, 7) == 1)
-                    x_ref = x_ref + error;
-                    doors(:,1) = doors(:,1) + error;
+                if (doors(d_i, 7) == 1)
+                    x_ref
+                    error
+                    x_ref = x_ref + error; % ADD IN MILLI!!
+                    doors(:,1) = doors(:,1) + 1000*error;
                 % subtract in x-direction
                 else
+                    x_ref
+                    error
                     x_ref = x_ref - error;
-                    doors(:,1) = doors(:,1) - error;
+                    doors(:,1) = doors(:,1) - 1000*error;
                 end
             % y-direction
             else
                 % add in y-direction
-                if (doors(i, 7) == 1)
-                   
+                if (doors(d_i, 7) == 1)
+                    y_ref
+                    error
                     y_ref = y_ref + error;
-                    doors(:,2) = doors(:,2) + error;
+                    doors(:,2) = doors(:,2) + 1000*error;
                     
                 % subtract in y-direction
                 else
-                    
+                    y_ref
+                    error
                     y_ref = y_ref - error;
-                    doors(:,2) = doors(:,2) - error;
+                    doors(:,2) = doors(:,2) - 1000*error;
                     
                 end
             end
             
+%             
+             if error > 0 
+                speeder=100;
+                time_error=((error*1000)/100)-0.5; 
+            else
+                speeder=-100;
+                time_error=((-error*1000)/100)-0.5;
+             end
+            pause(1);
+            pioneer_set_controls(sp, speeder, 0);
+            pause(time_error);
+            pioneer_set_controls(sp, 0, 0);
+%             
             pause(3);
+            
 
             % turn back
             pioneer_set_controls(sp, 0, -85);
