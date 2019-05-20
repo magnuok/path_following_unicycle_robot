@@ -25,7 +25,7 @@ doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
  radius = 0.2;
- measurment_points = 200;
+ measurment_points =200;
 
 %path = path_planner();
  
@@ -129,7 +129,7 @@ hold on;
 % start pos = [x, y, theta]
 pose(1,:) = [x_ref(1), y_ref(1), theta_ref(1)];
 
-% observed position
+% observed position 
 %pose_obs = zeros(100000, 3);
 pose_obs(1,:) = pose(1,:);
 
@@ -166,7 +166,7 @@ for k1 = 1:length(x_ref)
         data = loop(sp, pose_ref);
         
         pose_obs(k+1,:) = data(1:3);
-
+%         k
         % Find close by doors
         %start_coordinates = [2590, 20710];
         pos = data(1:2)*1000;
@@ -182,8 +182,12 @@ for k1 = 1:length(x_ref)
             if range < range_threshold && doors(i,4) == 0 
                 if doors(i,3) == 1
                     nearby_door_right = [doors(i,:), i]; % adding index because needed to change detected or not parameter to true/false
+                    door_detected(1)=1;
+                    doors(i,4) = 1; 
                 else
                     nearby_door_left = [doors(i,:), i]; 
+                    door_detected(2)=1;
+                    doors(i,4) = 1 ;
                 end
             end
         end
@@ -195,38 +199,57 @@ for k1 = 1:length(x_ref)
 %             door_detected = door_detector(nearby_door_right, nearby_door_left, scan)
 %         end
         
-%         % door is detected, drive to evaluate if door is open or not.
-%         if door_detected(1) == 1
-%             pioneer_set_controls(sp, 0, 0);
-%             pause(1);
-%             %forward
-%             pioneer_set_controls(sp, 300, 0);
-%             pause(1.433333);
-%             pioneer_set_controls(sp, 0, 0);   
-%             pause(0.1);
-%             %turn
-%             pioneer_set_controls(sp, 0, -85);
-%             pause(1);
-%             pioneer_set_controls(sp, 0, 0);
-% 
-%             % Check if door is open here
+
+%-------------------------- if close to door, search for them
+%         if ~isempty(nearby_door_right) 
+%             if(pos(1)-doors(i,1)<200 && pos(2)-doors(i,2)<200)
+%                 door_detected(1)=1;
+%             end
+%         end
+%         if  ~isempty(nearby_door_left)
+%             if(pos(1)-doors(i,1)<20 && pos(2)-doors(i,2)<20)
+%                 door_detected(2)=1;
+%             end
+%         end
+
+% -----------------------------------
+        % door is detected, drive to evaluate if door is open or not.
+        if door_detected(1) == 1
+            sonars = pioneer_read_sonars();
+            pioneer_set_controls(sp, 0, 0);
+            pause(1);
+            %forward
+            pioneer_set_controls(sp, 300, 0);
+            pause(1.433333);
+            pioneer_set_controls(sp, 0, 0);   
+            pause(0.1);
+            %turn
+            pioneer_set_controls(sp, 0, -85);
+            pause(1);
+            pioneer_set_controls(sp, 0, 0);
+
+            % Check if door is open here
+            
 %             scan_aux=scan(40:125);
 %             for l=1:1:length(scan_aux)
 %                 if scan_aux(l) < 10
 %                     scan_aux(l)=5000;
 %                 end
 %             end
-%             
-%             distance_to_wall = min(scan_aux)/1000;
-%             scan = LidarScan(lidar);
-% %             scan_array(l+1)= scan;
-%             door_state=Doors(scan,distance_to_wall);
+            
+            %distance_to_wall = min(scan_aux)/1000;
+            distance_to_wall = min(sonars(7:8))/1000;
+            %scan = LidarScan(lidar);
+%             scan_array(l+1)= scan;
+            sonars = pioneer_read_sonars();
+            %door_state=Doors(scan,distance_to_wall);
+            door_state=Doors_sonar(sonars,distance_to_wall);
 % %             %% Correct path with measured error
 % %             
 % %             % THINK WE HAVE TO COORECT THE DOORS ASWELL?
 % %              
-%              error = distance_to_wall - doors(i, 5)    
-% %             
+              error = distance_to_wall - doors(i, 5)    
+%             
 %             % x-direction
 %             if (doors(i, 6) == 0)
 %                 
@@ -257,40 +280,57 @@ for k1 = 1:length(x_ref)
 %                     
 %                 end
 %             end
-%             
-%             %%
+            
+            %%
+            %
+            % Correct odometry:
+            %error=-0.45;
+%             pause(3);
+%             if error > 0 
+%                 speeder=100;
+%                 time_error=((error*1000)/100)-0.5; 
+%             else
+%                 speeder=-100;
+%                 time_error=((-error*1000)/100)-0.5;
+%             end
+%             pioneer_set_controls(sp, speeder, 0);
+%             pause(time_error);
+%             pioneer_set_controls(sp, 0, 0);
+%             pause(0.1);
+%             %
 %             
 %             pause(3);
-% 
-%             % turn back
-%             pioneer_set_controls(sp, 0, 85);
-%             pause(1);
-%             pioneer_set_controls(sp, 0, 0);
-%             pause(0.1);
-%             %backward
-%             pioneer_set_controls(sp, -300, 0);
-%             pause(1.433333);
-%             pioneer_set_controls(sp, 0, 0);
-%             pause(1);
-%         
-%         elseif door_detected(2) == 1
-%             pioneer_set_controls(sp, 0, 0);
-%             pause(1);
-%             %forward
-%             pioneer_set_controls(sp, 300, 0);
-%             pause(1.433333);
-%             pioneer_set_controls(sp, 0, 0);
-%             pause(0.1);
-%             %turn
-%             pioneer_set_controls(sp, 0, 85);
-%             pause(1);
-%             pioneer_set_controls(sp, 0, 0);
-% 
-%             % Check if door is open here
-%             % Fransiscos function in here
-%             % esquerda 587
-%             % direita 85
-%              % Check if door is open here
+
+            % turn back
+            pioneer_set_controls(sp, 0, 85);
+            pause(1);
+            pioneer_set_controls(sp, 0, 0);
+            pause(0.1);
+            %backward
+            pioneer_set_controls(sp, -300, 0);
+            pause(1.433333);
+            pioneer_set_controls(sp, 0, 0);
+            pause(1);
+        
+        elseif door_detected(2) == 1
+            sonars = pioneer_read_sonars();
+            pioneer_set_controls(sp, 0, 0);
+            pause(1);
+            %forward
+            pioneer_set_controls(sp, 300, 0);
+            pause(1.433333);
+            pioneer_set_controls(sp, 0, 0);
+            pause(0.1);
+            %turn
+            pioneer_set_controls(sp, 0, 85);
+            pause(1);
+            pioneer_set_controls(sp, 0, 0);
+
+            % Check if door is open here
+            % Fransiscos function in here
+            % esquerda 587
+            % direita 85
+             % Check if door is open here
 %             scan_aux=scan(547:627);
 %             for l=1:1:length(scan_aux)
 %                 if scan_aux(l) < 10
@@ -299,16 +339,21 @@ for k1 = 1:length(x_ref)
 %             end
 %             
 %             distance_to_wall = min(scan_aux)/1000;
-%             
+            distance_to_wall = min(sonars(1:2))/1000;
+            %scan = LidarScan(lidar);
+%             scan_array(l+1)= scan;
+            sonars = pioneer_read_sonars();
+            %door_state=Doors(scan,distance_to_wall);
+            door_state=Doors_sonar(sonars,distance_to_wall);
 %             
 %             
 %             
 %             %distance_to_wall = scan(587)/1000
 %             scan = LidarScan(lidar);
 %             door_state=Doors(scan,distance_to_wall);
-%             %% Correct path with measured error
-%              error = distance_to_wall - doors(i, 5)    
-%             % x-direction
+            %% Correct path with measured error
+             error = distance_to_wall - doors(i, 5)    
+            % x-direction
 %             if (doors(i, 6) == 0)
 %                 
 %                 % add in x-direction
@@ -338,21 +383,36 @@ for k1 = 1:length(x_ref)
 %                     
 %                 end
 %             end
-%             %%
+            %%
+            
+            %error=-0.45;
 %             pause(3);
-% 
-%             % turn back
-%             pioneer_set_controls(sp, 0, -85);
-%             pause(1);
+%             if error > 0 
+%                 speeder=100;
+%                 time_error=((error*1000)/100)-0.5; 
+%             else
+%                 speeder=-100;
+%                 time_error=((-error*1000)/100)-0.5;
+%             end
+%             pioneer_set_controls(sp, speeder, 0);
+%             pause(time_error);
 %             pioneer_set_controls(sp, 0, 0);
 %             pause(0.1);
-%             % backward
-%             pioneer_set_controls(sp, -300, 0);
-%             pause(1.433333);
-%             pioneer_set_controls(sp, 0, 0);
-%             pause(1);
-%         end
-%         
+%             %      
+            pause(3);
+
+            % turn back
+            pioneer_set_controls(sp, 0, -85);
+            pause(1);
+            pioneer_set_controls(sp, 0, 0);
+            pause(0.1);
+            % backward
+            pioneer_set_controls(sp, -300, 0);
+            pause(1.433333);
+            pioneer_set_controls(sp, 0, 0);
+            pause(1);
+        end
+        %         
         
 %         % Special case for corner doors facing striaght forward
 %         if norm([5.02, 18.36] - pos(1:2)) < 0.2 || norm([18.74, 5.13] - pos(1:2)) < 0.2
@@ -391,7 +451,7 @@ function data = loop(sp, pose_ref)
     K3 = 1.5;
     v_max = 1.1;
     
-    
+%     if( x_y_error== 
 %     offset_x = 
 
     % READ ODOMETRY HERE to get pose_obs

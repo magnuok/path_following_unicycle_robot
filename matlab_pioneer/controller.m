@@ -31,7 +31,7 @@ doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
  
 % INTERPOLATION AND PLOTS
 
-path = dlmread('path_nice_corrected.txt');
+path = dlmread('path_nice_corrected_2.txt');
 
 x = path(:,1)';
 y = path(:,2)';
@@ -228,37 +228,35 @@ for k1 = 1:length(x_ref)
              error = distance_to_wall - doors(i, 5)    
 %             
 %             % x-direction
-%             if (doors(i, 6) == 0)
-%                 
-%                 % add in x-direction
-%                 if (doors(i, 7) == 1)
-%                     for a=1:5
-%                     x_ref(k1+a) = x_ref(k1+a) + error;
-%                     end
-%                 % subtract in x-direction
-%                 else
-%                     for a=1:5
-%                     x_ref(k1+a) = x_ref(k1+a) - error;
-%                     end
-%                 end
-%             % y-direction
-%             else
-%                 % add in y-direction
-%                 if (doors(i, 7) == 1)
-%                     for a=1:5
-%                     y_ref(k1+a) = y_ref(k1+a) + error;
-%                     end
-%                     
-%                 % subtract in y-direction
-%                 else
-%                     for a=1:5
-%                     y_ref(k1+a) = y_ref(k1+a) - error;
-%                     end
-%                     
-%                 end
-%             end
+            if (doors(i, 6) == 0)
+                
+                % add in x-direction
+                if (doors(i, 7) == 1)
+                    x_ref = x_ref + error;
+                    doors(:,1) = doors(:,1) + error;
+                % subtract in x-direction
+                else
+                    x_ref = x_ref - error;
+                    doors(:,1) = doors(:,1) - error;
+                end
+            % y-direction
+            else
+                % add in y-direction
+                if (doors(i, 7) == 1)
+                   
+                    y_ref = y_ref + error;
+                    doors(:,2) = doors(:,2) + error;
+                    
+                % subtract in y-direction
+                else
+                    
+                    y_ref = y_ref - error;
+                    doors(:,2) = doors(:,2) - error;
+                    
+                end
+            end
             
-            %%
+            %
             
             pause(3);
 
@@ -309,36 +307,34 @@ for k1 = 1:length(x_ref)
             %% Correct path with measured error
              error = distance_to_wall - doors(i, 5)    
             % x-direction
-%             if (doors(i, 6) == 0)
-%                 
-%                 % add in x-direction
-%                 if (doors(i, 7) == 1)
-%                     for a=1:5
-%                     x_ref(k1+a) = x_ref(k1+a) + error;
-%                     end
-%                 % subtract in x-direction
-%                 else
-%                     for a=1:5
-%                     x_ref(k1+a) = x_ref(k1+a) - error;
-%                     end
-%                 end
-%             % y-direction
-%             else
-%                 % add in y-direction
-%                 if (doors(i, 7) == 1)
-%                     for a=1:5
-%                     y_ref(k1+a) = y_ref(k1+a) + error;
-%                     end
-%                     
-%                 % subtract in y-direction
-%                 else
-%                     for a=1:5
-%                     y_ref(k1+a) = y_ref(k1+a) - error;
-%                     end
-%                     
-%                 end
-%             end
-            %%
+             if (doors(i, 6) == 0)
+                
+                % add in x-direction
+                if (doors(i, 7) == 1)
+                    x_ref = x_ref + error;
+                    doors(:,1) = doors(:,1) + error;
+                % subtract in x-direction
+                else
+                    x_ref = x_ref - error;
+                    doors(:,1) = doors(:,1) - error;
+                end
+            % y-direction
+            else
+                % add in y-direction
+                if (doors(i, 7) == 1)
+                   
+                    y_ref = y_ref + error;
+                    doors(:,2) = doors(:,2) + error;
+                    
+                % subtract in y-direction
+                else
+                    
+                    y_ref = y_ref - error;
+                    doors(:,2) = doors(:,2) - error;
+                    
+                end
+            end
+            
             pause(3);
 
             % turn back
