@@ -200,6 +200,12 @@ for k1 = 1:length(x_ref)
         
         % door is detected, drive to evaluate if door is open or not.
         if door_detected(1) == 1
+            
+            
+            sp = serial_port_start();
+            %CONFIG: timer_period = 0.1. Can change to lower maybe?
+            pioneer_init(sp);
+            
             pioneer_set_controls(sp, 0, 0);
             pause(1);
             %forward
@@ -323,10 +329,10 @@ for k1 = 1:length(x_ref)
             
             distance_to_wall = min(scan_aux)/1000;
             
-            
-            
-            
-            %distance_to_wall = scan(587)/1000
+%             
+%             
+%             
+%             %distance_to_wall = scan(587)/1000
             scan = LidarScan(lidar);
             door_state=Doors(scan,distance_to_wall);
             %% Correct path with measured error
@@ -374,12 +380,14 @@ for k1 = 1:length(x_ref)
             else
                 speeder=-100;
                 time_error=((-error*1000)/100)-0.5;
+
              end
             pause(1);
             pioneer_set_controls(sp, speeder, 0);
             pause(time_error);
             pioneer_set_controls(sp, 0, 0);
 %             
+
             pause(3);
             
 
