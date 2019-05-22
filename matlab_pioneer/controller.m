@@ -14,7 +14,7 @@ map = robotics.BinaryOccupancyGrid(image, 50);
 
 % Copy and inflate the map to factor in the robot's size for obstacle 
 % avoidance. Setting higher to get trajectory in middle of halway.
-robotRadius = 0.1; %
+robotRadius = 0.25 %0.2; %0.1
 mapInflated = copy(map);
 inflate(mapInflated, robotRadius);
 show(mapInflated)
@@ -226,7 +226,7 @@ for k1 = 1:length(x_ref)
             [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side);
 
             % Correcting rotation of x/y on path
-            if (d_i == 2 || d_i == 5 || d_i == 7 )
+            if (d_i == 2 || d_i == 5 || d_i == 7 || d_i == 10 || d_i == 16)
                 distance = norm(odom_door - last_odom_door);
                 delta = last_distance_to_wall - distance_to_wall;
                 % test
@@ -265,7 +265,7 @@ for k1 = 1:length(x_ref)
             [pose_ref,x_ref,y_ref,doors]=path_door_correction(d_i,pose_ref,x_ref,y_ref,doors,error);
             
             
-            if (d_i == 2 || d_i == 5 || d_i == 7 )
+            if (d_i == 2 || d_i == 5 || d_i == 7 || d_i == 10 || d_i == 16)
                 trajectory_plot = figure(2);
                 gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
             end
@@ -310,9 +310,9 @@ function data = loop(sp, pose_ref)
     
     % TUNING
     K1 = 0.5; % Artikkel: 0.41 2.94 1.42 0.5
-    K2 = 2.3;
-    K3 = 1.5;
-    v_max = 1.1;
+    K2 = 2.5;%2.3;
+    K3 = 1.5; %1.5;
+    v_max = 0.85;
     
     
 %     offset_x = 
