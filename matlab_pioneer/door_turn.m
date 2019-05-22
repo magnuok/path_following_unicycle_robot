@@ -64,14 +64,4 @@ function [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side)
     pause(1);
 
           
-    end
-
-        
-%         last_odom_door = odom_door;
-%         odom_door = data(1:2);
-%         last_distance_to_wall = distance_to_wall;
-% 
-%         % Correct path with measured error
-%         error = distance_to_wall - doors(d_i, 5);
-%  
-% end
+end

@@ -25,7 +25,7 @@ doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
  radius = 0.2;
- measurment_points = 500;
+ measurment_points = 250;
 
 %path = path_planner();
  
@@ -109,19 +109,21 @@ gg=xlabel("x - [m]");
 set(gg,"Fontsize",14);
 gg=ylabel("y - [m]");
 set(gg,"Fontsize",14);
+hold on;
+
 
 % Plotting reference circle around each point
-for i = 1:length(x_ref)
-    %// center
-    c = [x_ref(i) y_ref(i)];
-
-    pos = [c-radius 2*radius 2*radius];
-    rectangle('Position',pos,'Curvature',[1 1])
-    axis equal
-    
-    text(x_ref(i) + 0.1,y_ref(i) + 0.1 ,num2str(i),'Color','k')
-end
-hold on;
+% for i = 1:length(x_ref)
+%     %// center
+%     c = [x_ref(i) y_ref(i)];
+% 
+%     pos = [c-radius 2*radius 2*radius];
+%     rectangle('Position',pos,'Curvature',[1 1])
+%     axis equal
+%     
+%     text(x_ref(i) + 0.1,y_ref(i) + 0.1 ,num2str(i),'Color','k')
+% end
+% hold on;
 
 
 %% POSITION TRACKING
@@ -139,9 +141,7 @@ thet = [];
 alpha = [];
 v = [];
 w = [];
-last_odom_door = [0, 0]; 
-odom_door = [0, 0];
-distance_to_wall = 0;
+
 
 % iteration counter
 k = 1;
@@ -156,8 +156,11 @@ lidar = SetupLidar();
 
 pause(2);
 
-last_distance_to_wall = 0;
 
+last_odom_door = [0, 0]; 
+odom_door = [0, 0];
+distance_to_wall = 0;
+last_distance_to_wall = 0;
 
 for k1 = 1:length(x_ref)
     
@@ -203,54 +206,77 @@ for k1 = 1:length(x_ref)
         end
         
         % door is detected, drive to evaluate if door is open or not.
-        if door_detected(1) == 1 %Door on the right side 
+        if door_detected(1) == 1 % Door on the right side 
             
-            %Turns to the wall, corrects the robot position.-1 is the side
-            side=-1;
+             side=-1;
             [distance_to_wall]=distance_calc(scan,side);
             [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side);
-            
-%             if (d_i == 5 || d_i == 7 )
-%                 distance = norm(odom_door - last_odom_door);
-%                 delta = last_distance_to_wall - distance_to_wall;
-%                 theta_error = atan(delta/distance);
-%                 
-%                 theta_ref = theta_ref - theta_error;
-%                 pose_ref(3) = pose_ref(3) - theta_error;
-%             end
-            
-            
-            % Correction of path and doors position
-%             % x-direction
-            [pose_ref,x_ref,y_ref,doors]=path_door_correction(pose_ref,x_ref,y_ref,doors,error);
+
+            [pose_ref,x_ref,y_ref,doors]=path_door_correction(d_i,pose_ref,x_ref,y_ref,doors,error);
 
         
-        elseif door_detected(2) == 1 %Door on the left side
+        elseif door_detected(2) == 1 %Door on the left side   
+            side=1;
             
+            last_odom_door = odom_door;
+            odom_door = data(1:2);
+            last_distance_to_wall = distance_to_wall;
+            distance_to_wall = distance_calc(scan,side);
             
-             side=1;
-            [distance_to_wall]=distance_calc(scan,side);
             [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side);
 
-            
-             
+            % Correcting rotation of x/y on path
             if (d_i == 2 || d_i == 5 || d_i == 7 )
                 distance = norm(odom_door - last_odom_door);
                 delta = last_distance_to_wall - distance_to_wall;
-                theta_error = atan(delta/distance)
+                % test
+                theta_error = atan(delta/distance);
+
+                % Doors
+                doors_x = doors(:,1);
+                doors_y = doors(:,2);
+                %x_ref = x_ref;
+                %y_ref = y_ref;
+
+                % Rotate points
+                R = [cos(-theta_error) -sin(-theta_error); sin(-theta_error) cos(-theta_error)];
+                trajectory_rotated = R*[x_ref ; y_ref];
+                doors_rotated = R*[doors_x' ; doors_y'];
+
+                % put doors back
+                doors(:,1:2) = doors_rotated';
+
+                % pick out the vectors of rotated x- and y-data
+                x_ref = trajectory_rotated(1,:);
+                y_ref = trajectory_rotated(2,:);
                 
-                theta_ref = theta_ref - theta_error;
-                pose_ref(3) = pose_ref(3) - theta_error;
+                
+                % Correcting theta_ref
+                theta_ref = zeros(1,length(x_ref));
+                for i = 1: length(x_ref)-1 
+                    theta_ref(i) = atan2( (y_ref(i+1) - y_ref(i)), (x_ref(i+1) - x_ref(i)));
+                end
+                % Setting last element to previous angle.
+                theta_ref(length(x_ref)) = theta_ref(length(x_ref)-1);
+                theta_ref = theta_ref - theta_ref(1);
             end
-             
-            [pose_ref,x_ref,y_ref,doors]=path_door_correction(pose_ref,x_ref,y_ref,doors,error); 
-           
+            
+            % Correcting x/y on path
+            [pose_ref,x_ref,y_ref,doors]=path_door_correction(d_i,pose_ref,x_ref,y_ref,doors,error);
             
             
-             
+            if (d_i == 2 || d_i == 5 || d_i == 7 )
+                trajectory_plot = figure(2);
+                gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
+            end
         end
         
-% WHAT IS THIS SPECIAL CASE AND WHAT CAN WE DO WITH IT?        
+        
+        
+        
+        
+        
+        % WHAT IS THIS SPECIAL CASE AND WHAT CAN WE DO WITH IT?        
         % Special case for corner doors facing striaght forward
         if norm([5.02, 18.36] - pos(1:2)) < 0.2 || norm([18.74, 5.13] - pos(1:2)) < 0.2
            pioneer_set_controls(sp, 0, 0);
@@ -279,12 +305,6 @@ pioneer_set_controls(sp, 0, 0);
 pioneer_close(sp);
 fclose(lidar);
 stats = statistics(r)
-
-
-
-
-
-
 
 function data = loop(sp, pose_ref)
     
