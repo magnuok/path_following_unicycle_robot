@@ -10,13 +10,6 @@ function [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side)
         turn=85;
     end
     
-
-
-    %             last_odom_door = odom_door;
-    %             odom_door = pose_obs(1:2);
-    %             last_distance_to_wall = distance_to_wall;
-
-    
     % Go forward
     pioneer_set_controls(sp, 300, 0);
     pause(1.433333);
@@ -28,8 +21,7 @@ function [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side)
     pioneer_set_controls(sp, 0, 0);
     pause(1);
 
-    % Check the distance to the wall
-
+    % Check the distance to the door
     scan = LidarScan(lidar);
     % Check the door state:
     door_state=Doors(scan,distance_to_wall);
@@ -62,6 +54,5 @@ function [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side)
     pause(1.433333);
     pioneer_set_controls(sp, 0, 0);
     pause(1);
-
           
 end

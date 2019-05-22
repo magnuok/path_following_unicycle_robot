@@ -1,6 +1,6 @@
 function [distance_to_wall]=distance_calc(scan,side)
 
-% Independent for each side
+    % Independent for each side
     if side == -1 %Right side
         scan_aux=scan(40:125);
     elseif side== 1
@@ -13,7 +13,6 @@ function [distance_to_wall]=distance_calc(scan,side)
             scan_aux(l)=5000;
         end
     end
-
     distance_to_wall = min(scan_aux)/1000;
 
 end
