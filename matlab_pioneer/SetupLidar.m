@@ -13,7 +13,7 @@ MATLAB = 1;
 
 
 if MATLAB
-    lidar = serial('COM8','baudrate',115200);
+    lidar = serial('COM12','baudrate',115200);
     set(lidar,'Timeout',0.1);   
     set(lidar,'InputBufferSize',40000);
     set(lidar,'Terminator','CR');

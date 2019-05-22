@@ -14,7 +14,7 @@ if isempty(varargin)
     if strcmp(computer,'MACI64')
         port_name = '/dev/tty.usbserial';
     else
-        port_name = 'COM5';
+        port_name = 'COM11';
     end
 else
     port_name = varargin{1};

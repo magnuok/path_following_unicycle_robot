@@ -207,7 +207,8 @@ for k1 = 1:length(x_ref)
             
             %Turns to the wall, corrects the robot position.-1 is the side
             side=-1;
-            [distance_to_wall, error]=door_turn(sp,lidar,scan,side);
+            [distance_to_wall]=distance_calc(scan,side);
+            [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side);
             
 %             if (d_i == 5 || d_i == 7 )
 %                 distance = norm(odom_door - last_odom_door);
@@ -221,14 +222,16 @@ for k1 = 1:length(x_ref)
             
             % Correction of path and doors position
 %             % x-direction
-            [pose_ref,x_ref,doors]=path_door_correction(pose_ref,x_ref,doors,error);
+            [pose_ref,x_ref,y_ref,doors]=path_door_correction(pose_ref,x_ref,y_ref,doors,error);
 
         
         elseif door_detected(2) == 1 %Door on the left side
             
-            %Turns to the wall, corrects the robot position.-1 is the side
-            side=1;
-            [distance_to_wall, error]=door_turn(sp,lidar,scan,side);
+            
+             side=1;
+            [distance_to_wall]=distance_calc(scan,side);
+            [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side);
+
             
              
             if (d_i == 2 || d_i == 5 || d_i == 7 )
@@ -240,7 +243,7 @@ for k1 = 1:length(x_ref)
                 pose_ref(3) = pose_ref(3) - theta_error;
             end
              
-            [pose_ref,x_ref,doors]=path_door_correction(pose_ref,x_ref,doors,error); 
+            [pose_ref,x_ref,y_ref,doors]=path_door_correction(pose_ref,x_ref,y_ref,doors,error); 
            
             
             

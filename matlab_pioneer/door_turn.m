@@ -1,4 +1,4 @@
-function [distance_to_wall, error]=door_turn(sp,lidar,scan,side)
+function [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side)
     
     pioneer_set_controls(sp, 0, 0);
     pause(1);
@@ -6,24 +6,16 @@ function [distance_to_wall, error]=door_turn(sp,lidar,scan,side)
     % Independent for each side
     if side == -1 %Right side
         turn=-85;
-        scan_aux=scan(40:125);
     elseif side== 1
         turn=85;
-        scan_aux=scan(547:627);
     end
     
-    %Reading from the scan and finding the distance to wall
-    for l=1:1:length(scan_aux)
-        if scan_aux(l) < 10
-            scan_aux(l)=5000;
-        end
-    end
+
 
     %             last_odom_door = odom_door;
     %             odom_door = pose_obs(1:2);
     %             last_distance_to_wall = distance_to_wall;
 
-    distance_to_wall = min(scan_aux)/1000;
     
     % Go forward
     pioneer_set_controls(sp, 300, 0);

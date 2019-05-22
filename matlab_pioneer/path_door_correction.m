@@ -1,4 +1,4 @@
-function [pose_ref,x_ref,doors]=path_door_correction(pose_ref,x_ref,doors,error)
+function [pose_ref,x_ref,y_ref,doors]=path_door_correction(pose_ref,x_ref,y_ref,doors,error)
     
     if abs(error) >0.15 
         if (doors(d_i, 6) == 0)                
