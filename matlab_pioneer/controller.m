@@ -231,24 +231,30 @@ for k1 = 1:length(x_ref)
                 delta = last_distance_to_wall - distance_to_wall;
                 % test
                 theta_error = atan(delta/distance);
-
+                
+                last_odom_door(2) = 9.31;
+                last_odom_door(1) = 11.62;
+                
                 % Doors
-                doors_x = doors(:,1);
-                doors_y = doors(:,2);
+                doors_x = doors(:,1) - 1000*last_odom_door(1);
+                doors_y = doors(:,2) - 1000*last_odom_door(2);
                 %x_ref = x_ref;
                 %y_ref = y_ref;
 
                 % Rotate points
                 R = [cos(-theta_error) -sin(-theta_error); sin(-theta_error) cos(-theta_error)];
-                trajectory_rotated = R*[x_ref ; y_ref];
+                trajectory_rotated = R*[x_ref - last_odom_door(1) ; y_ref - last_odom_door(2)];
                 doors_rotated = R*[doors_x' ; doors_y'];
 
                 % put doors back
+                doors_rotated(1,:) = doors_rotated(1,:) + last_odom_door(1)*1000;
+                doors_rotated(2,:) = doors_rotated(2,:) + last_odom_door(2)*1000;
+                
                 doors(:,1:2) = doors_rotated';
 
                 % pick out the vectors of rotated x- and y-data
-                x_ref = trajectory_rotated(1,:);
-                y_ref = trajectory_rotated(2,:);
+                x_ref = trajectory_rotated(1,:) + last_odom_door(1);
+                y_ref = trajectory_rotated(2,:) + last_odom_door(2);
                 
                 
                 % Correcting theta_ref
@@ -267,13 +273,9 @@ for k1 = 1:length(x_ref)
             
             if (d_i == 2 || d_i == 5 || d_i == 7 || d_i == 10 || d_i == 16)
                 trajectory_plot = figure(2);
-                gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
+                gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
             end
         end
-        
-        
-        
-        
         
         
         % WHAT IS THIS SPECIAL CASE AND WHAT CAN WE DO WITH IT?        
