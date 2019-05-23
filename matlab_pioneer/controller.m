@@ -3,7 +3,6 @@ clear all;
 close all;
 clf;
 [signalclose, Fs]=audioread('door_closed.mp3');
-
 %lidar=SetupLidar();
 image = imread('floor_plant_1.jpg');
 % Crop image to relevant area
@@ -342,6 +341,7 @@ for k1 = 1:length(x_ref)
             soundsc(signalclose,Fs);
             pause(3);
         end
+        
         
         
 %         figure(2);
