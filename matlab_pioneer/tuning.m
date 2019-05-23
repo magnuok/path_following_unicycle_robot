@@ -4,12 +4,17 @@ close all;
 clf; 
 
 % TUNING VARIABLES
- radius = 0.2;
+ radius = 0.25;
  measurment_points = 15;
  
 % INTERPOLATION AND PLOTS
 
-path = [-0.5, 0; -1, 0; -2, 0];
+
+path = [-0.5, 0; -1, 0; -2, 0; -2.5, 0; -1 0.5];
+
+path = [-0.5, 0; -1, 0; -1.5, 0; -2, 0; -2.5, 0; -2.5 1;-2.5 2];
+path = [-0.5, 0; -1, 0; -1.5, 0; -2, 0; -2.5, 0];
+
 %path = dlmread('path_nice_corrected_2.txt');
 
 x = path(:,1)';
@@ -63,13 +68,13 @@ for i = 1: length(x_ref)-1
 end
 % Setting last element to previous angle.
 theta_ref(length(x_ref)) = theta_ref(length(x_ref)-1);
-theta_ref = theta_ref - theta_ref(1);
+theta_ref = theta_ref;
 
 trajectory_plot = figure(2);
 axis([min(x_ref)-1, max(x_ref)+1,min(y_ref)-2,max(y_ref)+2])
 gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-','LineWidth',2);
 title('TRAJECTORY')
-hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$','$Door coordinates (x,y)$' ,  'AutoUpdate','off');
+hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$',  'AutoUpdate','off');
 set(hl,'Interpreter','latex')
 set(gg,"LineWidth",1.5)
 gg=xlabel("x - [m]");
@@ -152,8 +157,8 @@ for k1 = 1:length(x_ref)
     end
 end
 
-% figure(2)
-% plot(pose_obs(:,1), pose_obs(:,2), 'g.')
+ figure(2)
+ plot(pose_obs(:,1), pose_obs(:,2), 'g.')
 
 pioneer_set_controls(sp, 0, 0);
 pioneer_close(sp);
@@ -162,10 +167,10 @@ stats = statistics(r)
 function data = loop(sp, pose_ref)
     
     % TUNING
-    K1 = 0.5; % Artikkel: 0.41 2.94 1.42 0.5
-    K2 = 2.5;%2.3;
-    K3 = 1.5; %1.5;
-    v_max = 0.85;
+    K1 = 0.41; % Artikkel: 0.41 2.94 1.42 0.5
+    K2 = 2.3;%2.3;
+    K3 = 1.6; %1.5;
+    v_max = 1.1;
     
     
 %     offset_x = 

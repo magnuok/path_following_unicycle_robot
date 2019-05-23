@@ -24,7 +24,7 @@ global doors;
 doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
- radius = 0.2;
+ radius = 0.25;
  measurment_points = 250;
 
 %path = path_planner();
@@ -294,7 +294,7 @@ for k1 = 1:length(x_ref)
             [distance_to_wall]=distance_calc(scan,side);
 
             % Correcting rotation of x/y on path
-            if (d_i == 2 || d_i == 5 || d_i == 7 || d_i == 10 || d_i == 16)
+%            if (d_i == 2 || d_i == 5 || d_i == 7 || d_i == 10 || d_i == 16)
 %                 distance = norm(odom_door - last_odom_door);
 %                 delta = last_distance_to_wall - distance_to_wall;
 %                 % test
@@ -379,10 +379,10 @@ stats = statistics(r)
 function data = loop(sp, pose_ref)
     
     % TUNING
-    K1 = 0.5; % Artikkel: 0.41 2.94 1.42 0.5
-    K2 = 2.5;%2.3;
-    K3 = 1.5; %1.5;
-    v_max = 0.85;
+    K1 = 0.41; % Artikkel: 0.41 2.94 1.42 0.5
+    K2 = 2.3;%2.3;
+    K3 = 1.6; %1.5;
+    v_max = 1.1;
     
     
 %     offset_x = 
