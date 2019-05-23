@@ -13,7 +13,8 @@ MATLAB = 1;
 
 
 if MATLAB
-    lidar = serial('/dev/tty.usbmodem14201','baudrate',115200);
+    lidar = serial('COM12','baudrate',115200);
+    %lidar = serial('/dev/tty.usbmodem14201','baudrate',115200);
     set(lidar,'Timeout',0.1);   
     set(lidar,'InputBufferSize',40000);
     set(lidar,'Terminator','CR');
@@ -35,6 +36,7 @@ else
     
     % keep this weird name structure for the COM port
     %
+    
     lidar = serial("\\\\.\\COM10", 115200);
     set( lidar, 'bytesize', 8);
     set( lidar, 'parity', 'n');

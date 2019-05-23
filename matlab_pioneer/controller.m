@@ -211,7 +211,7 @@ for k1 = 1:length(x_ref)
              side=-1;
             [distance_to_wall]=distance_calc(scan,side);
             [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side);
-
+            [distance_to_wall]=distance_calc(scan,side);
             [pose_ref,x_ref,y_ref,doors]=path_door_correction(d_i,pose_ref,x_ref,y_ref,doors,error);
 
         
@@ -232,8 +232,8 @@ for k1 = 1:length(x_ref)
                 % test
                 theta_error = atan(delta/distance);
                 
-                last_odom_door(2) = 9.31;
-                last_odom_door(1) = 11.62;
+%                 last_odom_door(2) = 9.31;
+%                 last_odom_door(1) = 11.62;
                 
                 % Doors
                 doors_x = doors(:,1) - 1000*last_odom_door(1);
