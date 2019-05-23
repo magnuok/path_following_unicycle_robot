@@ -75,6 +75,7 @@ y_ref = y_ref - y_ref(1);
 
 % Rotate points
 theta = atan2( (y_ref(2) - y_ref(1)) , (x_ref(2) - x_ref(1) ));
+% theta = theta + 
 R = [cos(-theta) -sin(-theta); sin(-theta) cos(-theta)];
 trajectory_rotated = R*[x_ref ; y_ref];
 
@@ -205,6 +206,72 @@ for k1 = 1:length(x_ref)
             door_detected = door_detector(nearby_door_right, nearby_door_left, scan);
         end
         
+        %10.4
+        %18.9
+        if (norm(data(1:2) - [0.4 18.9]) < 0.4)
+            side=1;
+            [distance_to_wall_1]=distance_calc(scan,side);
+            odom_1=data(1:2);
+            
+        elseif (norm(data(1:2) - [3.1 18.9]) < 0.4)
+            side=1;
+            [distance_to_wall_2]=distance_calc(scan,side);
+            odom_2=data(1:2);
+            
+            
+            
+            distance = norm(odom_1 - odom_2);
+            delta = distance_to_wall_2 - distance_to_wall_1;
+            % test
+            theta_error = atan(delta/distance);
+
+%                 last_odom_door(2) = 9.31;
+%                 last_odom_door(1) = 11.62;
+
+            % Doors
+            doors_x = doors(:,1) - 1000*odom_1(1);
+            doors_y = doors(:,2) - 1000*odom_1(2);
+            %x_ref = x_ref;
+            %y_ref = y_ref;
+
+            % Rotate points
+            R = [cos(-theta_error) -sin(-theta_error); sin(-theta_error) cos(-theta_error)];
+            trajectory_rotated = R*[x_ref - odom_1(1) ; y_ref - odom_1(2)];
+            doors_rotated = R*[doors_x' ; doors_y'];
+
+            % put doors back
+            doors_rotated(1,:) = doors_rotated(1,:) + odom_1(1)*1000;
+            doors_rotated(2,:) = doors_rotated(2,:) + odom_1(2)*1000;
+
+            doors(:,1:2) = doors_rotated';
+
+            % pick out the vectors of rotated x- and y-data
+            x_ref = trajectory_rotated(1,:) + odom_1(1);
+            y_ref = trajectory_rotated(2,:) + odom_1(2);
+
+
+            % Correcting theta_ref
+            theta_ref = zeros(1,length(x_ref));
+            for i = 1: length(x_ref)-1 
+                theta_ref(i) = atan2( (y_ref(i+1) - y_ref(i)), (x_ref(i+1) - x_ref(i)));
+            end
+            % Setting last element to previous angle.
+            theta_ref(length(x_ref)) = theta_ref(length(x_ref)-1);
+            theta_ref = theta_ref - theta_ref(1);
+        end
+        
+            
+            
+        
+        
+        
+        
+                
+        
+        
+        
+        
+        
         % door is detected, drive to evaluate if door is open or not.
         if door_detected(1) == 1 % Door on the right side 
             
@@ -224,48 +291,49 @@ for k1 = 1:length(x_ref)
             distance_to_wall = distance_calc(scan,side);
             
             [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side);
+            [distance_to_wall]=distance_calc(scan,side);
 
             % Correcting rotation of x/y on path
             if (d_i == 2 || d_i == 5 || d_i == 7 || d_i == 10 || d_i == 16)
-                distance = norm(odom_door - last_odom_door);
-                delta = last_distance_to_wall - distance_to_wall;
-                % test
-                theta_error = atan(delta/distance);
-                
-%                 last_odom_door(2) = 9.31;
-%                 last_odom_door(1) = 11.62;
-                
-                % Doors
-                doors_x = doors(:,1) - 1000*last_odom_door(1);
-                doors_y = doors(:,2) - 1000*last_odom_door(2);
-                %x_ref = x_ref;
-                %y_ref = y_ref;
-
-                % Rotate points
-                R = [cos(-theta_error) -sin(-theta_error); sin(-theta_error) cos(-theta_error)];
-                trajectory_rotated = R*[x_ref - last_odom_door(1) ; y_ref - last_odom_door(2)];
-                doors_rotated = R*[doors_x' ; doors_y'];
-
-                % put doors back
-                doors_rotated(1,:) = doors_rotated(1,:) + last_odom_door(1)*1000;
-                doors_rotated(2,:) = doors_rotated(2,:) + last_odom_door(2)*1000;
-                
-                doors(:,1:2) = doors_rotated';
-
-                % pick out the vectors of rotated x- and y-data
-                x_ref = trajectory_rotated(1,:) + last_odom_door(1);
-                y_ref = trajectory_rotated(2,:) + last_odom_door(2);
-                
-                
-                % Correcting theta_ref
-                theta_ref = zeros(1,length(x_ref));
-                for i = 1: length(x_ref)-1 
-                    theta_ref(i) = atan2( (y_ref(i+1) - y_ref(i)), (x_ref(i+1) - x_ref(i)));
-                end
-                % Setting last element to previous angle.
-                theta_ref(length(x_ref)) = theta_ref(length(x_ref)-1);
-                theta_ref = theta_ref - theta_ref(1);
-            end
+%                 distance = norm(odom_door - last_odom_door);
+%                 delta = last_distance_to_wall - distance_to_wall;
+%                 % test
+%                 theta_error = atan(delta/distance);
+%                 
+% %                 last_odom_door(2) = 9.31;
+% %                 last_odom_door(1) = 11.62;
+%                 
+%                 % Doors
+%                 doors_x = doors(:,1) - 1000*last_odom_door(1);
+%                 doors_y = doors(:,2) - 1000*last_odom_door(2);
+%                 %x_ref = x_ref;
+%                 %y_ref = y_ref;
+% 
+%                 % Rotate points
+%                 R = [cos(-theta_error) -sin(-theta_error); sin(-theta_error) cos(-theta_error)];
+%                 trajectory_rotated = R*[x_ref - last_odom_door(1) ; y_ref - last_odom_door(2)];
+%                 doors_rotated = R*[doors_x' ; doors_y'];
+% 
+%                 % put doors back
+%                 doors_rotated(1,:) = doors_rotated(1,:) + last_odom_door(1)*1000;
+%                 doors_rotated(2,:) = doors_rotated(2,:) + last_odom_door(2)*1000;
+%                 
+%                 doors(:,1:2) = doors_rotated';
+% 
+%                 % pick out the vectors of rotated x- and y-data
+%                 x_ref = trajectory_rotated(1,:) + last_odom_door(1);
+%                 y_ref = trajectory_rotated(2,:) + last_odom_door(2);
+%                 
+%                 
+%                 % Correcting theta_ref
+%                 theta_ref = zeros(1,length(x_ref));
+%                 for i = 1: length(x_ref)-1 
+%                     theta_ref(i) = atan2( (y_ref(i+1) - y_ref(i)), (x_ref(i+1) - x_ref(i)));
+%                 end
+%                 % Setting last element to previous angle.
+%                 theta_ref(length(x_ref)) = theta_ref(length(x_ref)-1);
+%                 theta_ref = theta_ref - theta_ref(1);
+%             end
             
             % Correcting x/y on path
             [pose_ref,x_ref,y_ref,doors]=path_door_correction(d_i,pose_ref,x_ref,y_ref,doors,error);
