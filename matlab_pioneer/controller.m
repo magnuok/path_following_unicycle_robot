@@ -162,6 +162,8 @@ last_odom_door = [0, 0];
 odom_door = [0, 0];
 distance_to_wall = 0;
 last_distance_to_wall = 0;
+corr_point_1 = [10.75 18.9];
+corr_point_2 = [13.69 18.9];
 
 for k1 = 1:length(x_ref)
     
@@ -208,12 +210,12 @@ for k1 = 1:length(x_ref)
         
         %10.4
         %18.9
-        if (norm(data(1:2) - [0.4 18.9]) < 0.4)
+        if (norm(data(1:2) - corr_point_1) < 0.5)
             side=1;
             [distance_to_wall_1]=distance_calc(scan,side);
             odom_1=data(1:2);
             
-        elseif (norm(data(1:2) - [3.1 18.9]) < 0.4)
+        elseif (norm(data(1:2) - corr_point_2) < 0.5)
             side=1;
             [distance_to_wall_2]=distance_calc(scan,side);
             odom_2=data(1:2);
