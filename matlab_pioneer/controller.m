@@ -2,6 +2,7 @@
 clear all;
 close all;
 clf;
+[signalclose, Fs]=audioread('door_closed.mp3');
 %lidar=SetupLidar();
 image = imread('floor_plant_1.jpg');
 % Crop image to relevant area
@@ -164,6 +165,8 @@ distance_to_wall = 0;
 last_distance_to_wall = 0;
 corr_point_1 = [10.75 18.9];
 corr_point_2 = [13.69 18.9];
+door_front_1 = [5.02, 18.36];
+door_front_3 = [19.32, 4.75];
 
 for k1 = 1:length(x_ref)
     
@@ -250,7 +253,7 @@ for k1 = 1:length(x_ref)
             % pick out the vectors of rotated x- and y-data
             x_ref = trajectory_rotated(1,:) + odom_1(1);
             y_ref = trajectory_rotated(2,:) + odom_1(2);
-
+            
 
             % Correcting theta_ref
             theta_ref = zeros(1,length(x_ref));
@@ -272,7 +275,12 @@ for k1 = 1:length(x_ref)
         
         
         
-        
+        if norm(door_front_1(1:2) - data(1:2)) < 0.2 || norm(door_front_3(1:2) - data(1:2)) < 0.2
+           pioneer_set_controls(sp, 0, 0);
+           pause(3);
+           soundsc(signalclose,Fs);
+           pause(3);
+        end
         
         % door is detected, drive to evaluate if door is open or not.
         if door_detected(1) == 1 % Door on the right side 
@@ -350,11 +358,7 @@ for k1 = 1:length(x_ref)
         
         % WHAT IS THIS SPECIAL CASE AND WHAT CAN WE DO WITH IT?        
         % Special case for corner doors facing striaght forward
-        if norm([5.02, 18.36] - pos(1:2)) < 0.2 || norm([18.74, 5.13] - pos(1:2)) < 0.2
-           pioneer_set_controls(sp, 0, 0);
-           pause(3);
-           
-        end
+        
         
         
 %         figure(2);
