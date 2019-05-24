@@ -16,7 +16,7 @@ map = robotics.BinaryOccupancyGrid(image, 50);
 
 % Copy and inflate the map to factor in the robot's size for obstacle 
 % avoidance. Setting higher to get trajectory in middle of halway.
-robotRadius = 0.15 %0.2; %0.1
+robotRadius = 0.15; %0.2; %0.1
 mapInflated = copy(map);
 inflate(mapInflated, robotRadius);
 show(mapInflated)
@@ -26,8 +26,8 @@ global doors;
 doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
- radius = 0.25;
- measurment_points = 250;
+radius = 0.25;
+measurment_points = 250;
 
 %path = path_planner();
  
@@ -37,6 +37,23 @@ path = dlmread('path_nice_corrected_2.txt');
 
 x = path(:,1)';
 y = path(:,2)';
+
+%corr_points = [21.53 8.4; 21.53 6.4; 21.53 6.4; 21.53 6.4];
+
+corr_points = [7.02,15.83;
+9.13,15.83;
+17.6,15.83;
+18.4,15.83;
+21.53,8.09;
+21.53,4.84;
+20.26,1.5;
+18.89,1.5;
+12.42,1.5;
+10.36, 1.5;
+6.93,3.02;
+6.93,5.6;
+6.93,7.26;
+6.93,10.61];
 
 % Make sure elements are distinct for interpolating
 for i = 1:length(x)
@@ -64,10 +81,16 @@ y_ref = ppval(ppy, xq);
 figure(1);
 plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
 plot(doors(:,1)/1000, doors(:,2)/1000, '*');
+plot(corr_points(:,1), corr_points(:,2), 'm+');
 
 % Doors
 doors_x = doors(:,1) - x(1)*1000;
 doors_y = doors(:,2) - y(1)*1000;
+
+% Correction points
+corr_points_x = corr_points(:,1) - x(1);
+corr_points_y = corr_points(:,2) - y(1);
+
 
 % Start in (0,0)
 x = x - x(1);
@@ -77,12 +100,14 @@ y_ref = y_ref - y_ref(1);
 
 % Rotate points
 theta = atan2( (y_ref(2) - y_ref(1)) , (x_ref(2) - x_ref(1) ));
-% theta = theta + 
 R = [cos(-theta) -sin(-theta); sin(-theta) cos(-theta)];
 trajectory_rotated = R*[x_ref ; y_ref];
 
 doors_rotated = R*[doors_x' ; doors_y'];
 doors(:,1:2) = doors_rotated';
+
+corr_points_rotated = R*[corr_points_x'; corr_points_y'];
+corr_points = corr_points_rotated';
 
 % Rotate interploation points
 interp_roateted = R*[x ; y];
@@ -103,9 +128,9 @@ theta_ref = theta_ref - theta_ref(1);
 
 trajectory_plot = figure(2);
 axis([map.XWorldLimits(1),map.XWorldLimits(2),map.YWorldLimits(1),map.YWorldLimits(2)])
-gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
+gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*',corr_points(:,1),corr_points(:,2),'m+','LineWidth',2);
 title('TRAJECTORY')
-hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$','$Door coordinates (x,y)$' ,  'AutoUpdate','off');
+hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$','$Door coordinates (x,y)$','$Correctionpoints$', 'AutoUpdate','off');
 set(hl,'Interpreter','latex')
 set(gg,"LineWidth",1.5)
 gg=xlabel("x - [m]");
@@ -165,11 +190,7 @@ odom_door = [0, 0];
 distance_to_wall = 0;
 last_distance_to_wall = 0;
 
-% corr_points = [10.75 18.9; 13.69 18.9; 17.8 4.3; 15.87 4.3];
-corr_points = [ 17.8 4.3; 15.87 4.3];
-
 door_front = [5.02, 18.36; 19.32, 4.75];
-
 door_front_1 = [4.95, 17.4];
 door_front_3 = [19.32, 4.75];
 
@@ -188,7 +209,6 @@ for k1 = 1:length(x_ref)
         pose_obs(k+1,:) = data(1:3);
 
         % Find close by doors
-        %start_coordinates = [2590, 20710];
         pos = data(1:2)*1000;
         range_threshold = 1300; % Search for the door inside threshold
         nearby_door_right = [];
@@ -217,40 +237,50 @@ for k1 = 1:length(x_ref)
             door_detected = door_detector(nearby_door_right, nearby_door_left, scan);
         end
         
-
-        if ( norm(data(1:2) - corr_points(1,:)) < 0.3)
+        % look at this threshold. Could be bigger
+        if (norm(data(1:2) - corr_points(1,:)) < 0.2)
+            scan = LidarScan(lidar);
             side=1;
             [distance_to_wall_1]=distance_calc(scan,side);
-            odom_1=data(1:2);
-        %elseif ( norm(data(1:2) - corr_points(4,:)) < 0.3)    
-        elseif (norm(data(1:2) - corr_points(2,:)) < 0.3)
+            odom_1=data(1:2);    
+        elseif (norm(data(1:2) - corr_points(2,:)) < 0.2)
+            scan = LidarScan(lidar);
             side=1;
-        
             [distance_to_wall_2]=distance_calc(scan,side);
             odom_2=data(1:2);
             distance = norm(odom_1 - odom_2);
             delta = distance_to_wall_2 - distance_to_wall_1;
-            % test
-            theta_error = atan(delta/distance);
+            
+            theta_error = -atan(delta/distance);
             % Doors
             doors_x = doors(:,1) - 1000*odom_1(1);
             doors_y = doors(:,2) - 1000*odom_1(2);
+            corr_points_x =corr_points_x(:,1) - odom_1(1);
+            corr_points_y =corr_points_y(:,2) - odom_1(2);
+            door_front_x = door_front(:,1) - odom_1(1);
+            door_front_y = door_front(:,2) - odom_1(2);
+
             % Rotate points
             R = [cos(-theta_error) -sin(-theta_error); sin(-theta_error) cos(-theta_error)];
             trajectory_rotated = R*[x_ref - odom_1(1) ; y_ref - odom_1(2)];
             doors_rotated = R*[doors_x' ; doors_y'];
+            corr_points_rotated = R*[corr_points_x' ; corr_points_y'];
+            door_front_rotated = R*[door_front_x' ; door_front_y'];
             
-            % test
-            corr_points = R*corr_points';
-            corr_points = corr_points';
-            door_front = R*door_front';
-            door_front = door_front';
-            
-            
-            % put doors back
+            % put back
             doors_rotated(1,:) = doors_rotated(1,:) + odom_1(1)*1000;
             doors_rotated(2,:) = doors_rotated(2,:) + odom_1(2)*1000;
             doors(:,1:2) = doors_rotated';
+            
+            corr_points_rotated(1,:) = corr_points_rotated(1,:) + odom_1(1);
+            corr_points_rotated(2,:) = corr_points_rotated(2,:) + odom_1(2);
+            corr_points = corr_points_rotated';
+            
+            door_front_rotated(1,:) = door_front_rotated(1,:) + odom_1(1);
+            door_front_rotated(2,:) = door_front_rotated(2,:) + odom_1(2);
+            doors_rotated = doors_rotated_rotated';
+            
+            
             % pick out the vectors of rotated x- and y-data
             x_ref = trajectory_rotated(1,:) + odom_1(1);
             y_ref = trajectory_rotated(2,:) + odom_1(2);
@@ -262,12 +292,20 @@ for k1 = 1:length(x_ref)
             % Setting last element to previous angle.
             theta_ref(length(x_ref)) = theta_ref(length(x_ref)-1);
             theta_ref = theta_ref - theta_ref(1);
+            
+            % DELETING CORRECTION POINTS
+            corr_points(1,:) = [];
+            corr_points(2,:) = [];
+            
+            % Plotting
+            trajectory_plot = figure(2);
+            gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*',corr_points(:,1),corr_points(:,2),'m+','LineWidth',2);
+            hold on;
         end
     
         
         % door is detected, drive to evaluate if door is open or not.
         if door_detected(1) == 1 % Door on the right side 
-            
              side=-1;
             [distance_to_wall]=distance_calc(scan,side);
             [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side);
@@ -277,7 +315,6 @@ for k1 = 1:length(x_ref)
         
         elseif door_detected(2) == 1 %Door on the left side   
             side=1;
-            
             last_odom_door = odom_door;
             odom_door = data(1:2);
             last_distance_to_wall = distance_to_wall;
@@ -285,55 +322,13 @@ for k1 = 1:length(x_ref)
             
             [error,doors]=door_turn(doors, d_i, sp, lidar, distance_to_wall, side);
             [distance_to_wall]=distance_calc(scan, side);
-
-            %Correcting rotation of x/y on path
-           if (d_i == 2 || d_i == 5)
-                distance = norm(odom_door - last_odom_door);
-                delta = last_distance_to_wall - distance_to_wall;
-                % test
-                theta_error = atan(delta/distance);
-
-                % Doors
-                doors_x = doors(:,1) - 1000*last_odom_door(1);
-                doors_y = doors(:,2) - 1000*last_odom_door(2);
-                % Rotate points
-                R = [cos(-theta_error) -sin(-theta_error); sin(-theta_error) cos(-theta_error)];
-                trajectory_rotated = R*[x_ref - last_odom_door(1) ; y_ref - last_odom_door(2)];
-                doors_rotated = R*[doors_x' ; doors_y'];
-                
-                % test
-                corr_points = R*corr_points';
-                corr_points = corr_points';
-                door_front = R*door_front';
-                door_front = door_front';
-
-                % put doors back
-                doors_rotated(1,:) = doors_rotated(1,:) + last_odom_door(1)*1000;
-                doors_rotated(2,:) = doors_rotated(2,:) + last_odom_door(2)*1000;                
-                doors(:,1:2) = doors_rotated';
-                % pick out the vectors of rotated x- and y-data
-                x_ref = trajectory_rotated(1,:) + last_odom_door(1);
-                y_ref = trajectory_rotated(2,:) + last_odom_door(2);
-
-                
-                % Correcting theta_ref
-                theta_ref = zeros(1,length(x_ref));
-                for i = 1: length(x_ref)-1 
-                    theta_ref(i) = atan2( (y_ref(i+1) - y_ref(i)), (x_ref(i+1) - x_ref(i)));
-                end
-                % Setting last element to previous angle.
-                theta_ref(length(x_ref)) = theta_ref(length(x_ref)-1);
-                theta_ref = theta_ref - theta_ref(1);
-            end
-            
-            % Correcting x/y on path
             [pose_ref,x_ref,y_ref,doors, corr_points, door_front] = path_door_correction(d_i,pose_ref, x_ref, y_ref, doors, error, corr_points, door_front);
             
             
-            if (d_i == 2 || d_i == 5 || d_i == 7 || d_i == 10 || d_i == 16)
-                trajectory_plot = figure(2);
-                gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
-            end
+%             if (d_i == 2 || d_i == 5 || d_i == 7 || d_i == 10 || d_i == 16)
+%                 trajectory_plot = figure(2);
+%                 gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
+%             end
         end
         
         
@@ -367,9 +362,7 @@ for k1 = 1:length(x_ref)
             pioneer_set_controls(sp, 0, 0);
             pause(1);
             a=2;
-        end
-        
-        
+         end
         
 %         figure(2);
 %         hold on;

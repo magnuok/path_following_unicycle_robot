@@ -35,7 +35,7 @@ path = dlmread('path_theta_test.txt');
 x = path(:,1)';
 y = path(:,2)';
 
-corr_points = [ 21.53 8.4; 21.53 6.4];
+corr_points = [21.53 8.4; 21.53 6.4];
 
 % Make sure elements are distinct for interpolating
 for i = 1:length(x)
@@ -62,7 +62,7 @@ y_ref = ppval(ppy, xq);
 % Plotting reference trajectory in node-map
 figure(1);
 plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
-plot(corr_points(:,1), corr_points(:,2), '*');
+plot(corr_points(:,1), corr_points(:,2), '+');
 
 corr_points_x = corr_points(:,1) - x(1);
 corr_points_y = corr_points(:,2) - y(1);
@@ -104,7 +104,7 @@ trajectory_plot = figure(2);
 axis([min(x_ref)-1, max(x_ref)+1,min(y_ref)-2,max(y_ref)+2])
 gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-',corr_points(:,1),corr_points(:,2),'*','LineWidth',2);
 title('TRAJECTORY')
-hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$','corr_points',  'AutoUpdate','off');
+hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$','$corrpoints$',  'AutoUpdate','off');
 set(hl,'Interpreter','latex')
 set(gg,"LineWidth",1.5)
 gg=xlabel("x - [m]");
@@ -149,9 +149,6 @@ odom_door = [0, 0];
 distance_to_wall = 0;
 last_distance_to_wall = 0;
 
-% corr_points = [10.75 18.9; 13.69 18.9; 17.8 4.3; 15.87 4.3];
-%corr_points = [ 17.8 4.3; 15.87 4.3];
-% 
 % door_front = [5.02, 18.36; 19.32, 4.75];
 % 
 % door_front_1 = [4.95, 17.4];
