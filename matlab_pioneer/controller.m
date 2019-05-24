@@ -143,7 +143,7 @@ thet = [];
 alpha = [];
 v = [];
 w = [];
-
+a=0;
 
 % iteration counter
 k = 1;
@@ -335,11 +335,20 @@ for k1 = 1:length(x_ref)
         end
         
         
-        if norm(door_front(1,:) - data(1:2)) < 0.5 || norm(door_front(2,:) - data(1:2)) < 0.5
+        if (norm(door_front(1,:) - data(1:2)) < 0.5 || norm(door_front(2,:) - data(1:2)) < 0.5 ) && a==0
             pioneer_set_controls(sp, 0, 0);
-            pause(3);
+            pause(2);
             soundsc(signalclose,Fs);
-            pause(3);
+            pause(1);
+            a=1;
+        end
+        
+         if (norm(door_front(2,:) - data(1:2)) < 0.5 ) && a==1
+            pioneer_set_controls(sp, 0, 0);
+            pause(2);
+            soundsc(signalclose,Fs);
+            pause(1);
+            a=2;
         end
         
         
