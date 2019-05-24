@@ -13,7 +13,7 @@ MATLAB = 1;
 
 
 if MATLAB
-    lidar = serial('COM4','baudrate',115200);
+    lidar = serial('COM13','baudrate',115200);
     %lidar = serial('/dev/tty.usbmodem14201','baudrate',115200);
     set(lidar,'Timeout',0.1);   
     set(lidar,'InputBufferSize',40000);

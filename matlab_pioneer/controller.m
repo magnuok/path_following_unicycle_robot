@@ -168,7 +168,7 @@ corr_points = [10.75 18.9; 13.69 18.9; 17.8 4.3; 15.87 4.3];
 
 door_front = [5.02, 18.36; 19.32, 4.75];
 
-door_front_1 = [5.02, 18.36];
+door_front_1 = [4.95, 17.4];
 door_front_3 = [19.32, 4.75];
 
 
@@ -270,7 +270,7 @@ for k1 = 1:length(x_ref)
             [distance_to_wall]=distance_calc(scan,side);
             [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side);
             [distance_to_wall]=distance_calc(scan,side);
-            [pose_ref,x_ref,y_ref,doors]=path_door_correction(d_i,pose_ref,x_ref,y_ref,doors,error);
+            [pose_ref,x_ref,y_ref,doors,corr_points, door_front]=path_door_correction(d_i,pose_ref,x_ref,y_ref,doors,error,corr_points,door_front);
 
         
         elseif door_detected(2) == 1 %Door on the left side   
@@ -335,7 +335,7 @@ for k1 = 1:length(x_ref)
         end
         
         
-        if norm(door_front(1,:) - data(1:2)) < 0.2 || norm(door_front(2,:) - data(1:2)) < 0.2
+        if norm(door_front(1,:) - data(1:2)) < 0.5 || norm(door_front(2,:) - data(1:2)) < 0.5
             pioneer_set_controls(sp, 0, 0);
             pause(3);
             soundsc(signalclose,Fs);
