@@ -255,8 +255,8 @@ for k1 = 1:length(x_ref)
             % Doors
             doors_x = doors(:,1) - 1000*odom_1(1);
             doors_y = doors(:,2) - 1000*odom_1(2);
-            corr_points_x =corr_points_x(:,1) - odom_1(1);
-            corr_points_y =corr_points_y(:,2) - odom_1(2);
+            corr_points_x =corr_points(:,1) - odom_1(1);
+            corr_points_y =corr_points(:,2) - odom_1(2);
             door_front_x = door_front(:,1) - odom_1(1);
             door_front_y = door_front(:,2) - odom_1(2);
 
@@ -278,7 +278,7 @@ for k1 = 1:length(x_ref)
             
             door_front_rotated(1,:) = door_front_rotated(1,:) + odom_1(1);
             door_front_rotated(2,:) = door_front_rotated(2,:) + odom_1(2);
-            doors_rotated = doors_rotated_rotated';
+            door_front = door_front_rotated';
             
             
             % pick out the vectors of rotated x- and y-data
