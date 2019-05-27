@@ -371,7 +371,39 @@ for k1 = 1:length(x_ref)
             pause(1.433333);
             pioneer_set_controls(sp, 0, 0);
             pause(1);
+            
+            % Copy paste if works
+            scan = LidarScan(lidar);
+            scan_aux=scan(331:351);
+            for l=1:1:length(scan_aux)
+                if scan_aux(l) < 10
+                    scan_aux(l)=5000;
+                end
+            end
+            distance_to_wall = min(scan_aux)/1000
+            % measure here
+            error = distance_to_wall - 1
+
+            % Robot position correction, knowing the error, moves forward or
+            % backward
+            if abs(error) > 0.05
+                if error > 0 
+                    speeder=100;
+                    time_error=((error*1000)/100)-0.4; 
+                else
+                    speeder=-100;
+                    time_error=((-error*1000)/100)-0.4;
+                end
+                pause(1);
+                pioneer_set_controls(sp, speeder, 0);
+                pause(time_error);
+                pioneer_set_controls(sp, 0, 0);           
+                pause(3);
+            end
+            
+            [pose_ref,x_ref,y_ref,doors, corr_points, door_front] = path_door_correction(7,pose_ref, x_ref, y_ref, doors, error, corr_points, door_front);
             a=1;
+            
         end
         
          if (norm(door_front(2,:) - data(1:2)) < 0.5 ) && a==1
@@ -379,14 +411,14 @@ for k1 = 1:length(x_ref)
             pause(2);
             pioneer_set_controls(sp, 300, 0);
             pause(1.433333);
-            pioneer_set_controls(sp, 0, 0);   
+            pioneer_set_controls(sp, 0, 0);
             pause(1);
             soundsc(signalclose,Fs);
             pause(2);
             pioneer_set_controls(sp, -300, 0);
             pause(1.433333);
             pioneer_set_controls(sp, 0, 0);
-            pause(1);
+            pause(1);           
             a=2;
          end
         
