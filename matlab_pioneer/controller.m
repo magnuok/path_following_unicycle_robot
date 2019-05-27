@@ -27,20 +27,20 @@ doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
 radius = 0.3; %0.25;
-measurment_points = 500;
+measurment_points = 250;
 
 %path = path_planner();
  
 % INTERPOLATION AND PLOTS
-
-path = dlmread('path_nice_corrected_2.txt');
+path = dlmread('path_nice_verynice_test.txt');
+%path = dlmread('path_nice_corrected_2.txt');
 
 x = path(:,1)';
 y = path(:,2)';
 
 %corr_points = [21.53 8.4; 21.53 6.4; 21.53 6.4; 21.53 6.4];
 
-corr_points = [6.6,15.83;
+corr_points = [7,15.83;
 8.38,15.83;
 17.3,15.83;
 17.65,15.83;
@@ -54,6 +54,8 @@ corr_points = [6.6,15.83;
 6.93,4.5;
 6.93,7.26;
 6.93,8.9;
+6.93,13.7;
+6.93,14.5;
 0.0,0.0;
 0.0,0.0];
 
@@ -202,28 +204,37 @@ last_odom_door = [0, 0];
 odom_door = [0, 0];
 distance_to_wall = 0;
 last_distance_to_wall = 0;
+in_range = false;
 
 
 
 for k1 = 1:length(x_ref)
     
     % Changing reference
+    
     pose_ref = [x_ref(k1),y_ref(k1), theta_ref(k1)];
     
     while norm(pose_obs(k,1:2) - pose_ref(1:2)) > radius
         
         % this will be performed every dadada seconds
         % data = [pose_new, e, phi, alpha, v, w]
-        data = loop(sp, pose_ref);
+        
+        % drive slowly forwrd
+        if in_range == true
+            data = loop(sp, pose_ref,1);
+        else % as usual
+            data = loop(sp, pose_ref,0);
+        end
         
         pose_obs(k+1,:) = data(1:3);
 
         % Find close by doors
         pos = data(1:2)*1000;
-        range_threshold = 1000; % Search for the door inside threshold
+        range_threshold = 1100; % Search for the door inside threshold
         nearby_door_right = [];
         nearby_door_left = [];
         door_detected = [0 0];
+        in_range = false;
         
         for i = 1:length(doors(:,1))
             range = norm([doors(i,1),doors(i,2)] - pos(1:2) );
@@ -232,10 +243,12 @@ for k1 = 1:length(x_ref)
             if range < range_threshold && doors(i,4) == 0 
                 if doors(i,3) == 1
                     nearby_door_right = [doors(i,:), i];% adding index because needed to change detected or not parameter to true/false
-                    d_i= i;
+                    d_i = i;
+                    in_range = true;
                 else
                     nearby_door_left = [doors(i,:), i]; 
-                    d_i= i;
+                    d_i = i;
+                    in_range = true;
                 end
             end
         end
@@ -244,7 +257,8 @@ for k1 = 1:length(x_ref)
         %if close to door, search for them
         if ~isempty(nearby_door_right) || ~isempty(nearby_door_left)
             scan = LidarScan(lidar);
-            door_detected = door_detector(nearby_door_right, nearby_door_left, scan);
+            door_detected = door_detector(nearby_door_right, nearby_door_left, scan, d_i);
+            
         end
         
         % look at this threshold. Could be bigger
@@ -331,22 +345,16 @@ for k1 = 1:length(x_ref)
             [pose_ref,x_ref,y_ref,doors,corr_points, door_front]=path_door_correction(d_i,pose_ref,x_ref,y_ref,doors,error,corr_points,door_front);
 
         
-        elseif door_detected(2) == 1 %Door on the left side   
+        elseif door_detected(2) == 1 %Door on the left side
             side=1;
             last_odom_door = odom_door;
             odom_door = data(1:2);
             last_distance_to_wall = distance_to_wall;
             distance_to_wall = distance_calc(scan, side);
-            
+
             [error,doors]=door_turn(doors, d_i, sp, lidar, distance_to_wall, side);
             [distance_to_wall]=distance_calc(scan, side);
             [pose_ref,x_ref,y_ref,doors, corr_points, door_front] = path_door_correction(d_i,pose_ref, x_ref, y_ref, doors, error, corr_points, door_front);
-            
-            
-%             if (d_i == 2 || d_i == 5 || d_i == 7 || d_i == 10 || d_i == 16)
-%                 trajectory_plot = figure(2);
-%                 gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
-%             end
         end
         
         
@@ -403,7 +411,7 @@ pioneer_close(sp);
 fclose(lidar);
 stats = statistics(r)
 
-function data = loop(sp, pose_ref)
+function data = loop(sp, pose_ref, flag)
     
     % TUNING
     K1 = 0.41; % Artikkel: 0.41 2.94 1.42 0.5
@@ -453,8 +461,13 @@ function data = loop(sp, pose_ref)
     end
     
     % SET v AND w here
-     pioneer_set_controls(sp, round(v*1000), round(w*(180/pi)))
-
+    if flag == 1
+        pioneer_set_controls(sp, 100, 0)
+    else % if we are close to door
+        pioneer_set_controls(sp, round(v*1000), round(w*(180/pi)))
+    end
+        
+        
     % ROBOT
     pose_new = pose_obs;
 

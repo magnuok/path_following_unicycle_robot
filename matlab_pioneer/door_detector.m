@@ -1,5 +1,5 @@
-function ans = door_detector(nearby_door_right,nearby_door_left,scan) %input: ranges
-%% Process ranges
+function ans = door_detector(nearby_door_right,nearby_door_left,scan, d_i) %input: ranges
+% Process ranges
 x= [];
 y=[];
 
@@ -38,6 +38,10 @@ end
 
 % alt i milli. 
 door_threshold = 60; % How big norm represents a door? Hvor stor topp på deriviert. Tune opp/ned.
+if d_i == 8
+    door_threshold = 30; % How big norm represents a door? Hvor stor topp på deriviert. Tune opp/ned.
+end
+
 door_distance = 200; % How close should the robot be to the door before is it denoted as detected? distanse fra første dørkarm
 detect_door_left = false;
 detect_door_right = false;
