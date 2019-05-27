@@ -1,6 +1,6 @@
 function [pose_ref,x_ref,y_ref,doors,corr_points, door_front]=path_door_correction(d_i,pose_ref,x_ref,y_ref,doors,error,corr_points,door_front)
     
-    if abs(error) >0.15 
+    if abs(error) >0.05 
         if (doors(d_i, 6) == 0)                
             % add in x-direction
             if (doors(d_i, 7) == 1)

@@ -2,6 +2,8 @@
 clear all;
 close all;
 clf;
+[signalclose, Fs]=audioread('door_closed.mp3');
+[signalshutdown, Fs1]=audioread('shutdown.mp3');
 %lidar=SetupLidar();
 image = imread('floor_plant_1.jpg');
 % Crop image to relevant area
@@ -14,7 +16,7 @@ map = robotics.BinaryOccupancyGrid(image, 50);
 
 % Copy and inflate the map to factor in the robot's size for obstacle 
 % avoidance. Setting higher to get trajectory in middle of halway.
-robotRadius = 0.1; %
+robotRadius = 0.15; %0.2; %0.1
 mapInflated = copy(map);
 inflate(mapInflated, robotRadius);
 show(mapInflated)
@@ -24,17 +26,36 @@ global doors;
 doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
- radius = 0.2;
- measurment_points =200;
+radius = 0.3; %0.25;
+measurment_points = 125;
 
 %path = path_planner();
  
 % INTERPOLATION AND PLOTS
 
-path = dlmread('path_nice_corrected_2.txt');
+path = dlmread('path_nice_verynice_test.txt');
 
 x = path(:,1)';
 y = path(:,2)';
+
+%corr_points = [21.53 8.4; 21.53 6.4; 21.53 6.4; 21.53 6.4];
+
+corr_points = [6.6,15.83;
+8.38,15.83;
+17.3,15.83;
+17.65,15.83;
+21.53,8.08;
+21.53,6.54;
+20.26,1.5;
+19.6,1.5;
+12.42,1.5;
+11.36, 1.5;
+6.93,3.02;
+6.93,4.5;
+6.93,7.26;
+6.93,8.9;
+0.0,0.0;
+0.0,0.0];
 
 % Make sure elements are distinct for interpolating
 for i = 1:length(x)
@@ -62,10 +83,16 @@ y_ref = ppval(ppy, xq);
 figure(1);
 plot(x,y,'o',x_ref,y_ref,'-','LineWidth',2);
 plot(doors(:,1)/1000, doors(:,2)/1000, '*');
+plot(corr_points(:,1), corr_points(:,2), 'm+');
 
 % Doors
 doors_x = doors(:,1) - x(1)*1000;
 doors_y = doors(:,2) - y(1)*1000;
+
+% Correction points
+corr_points_x = corr_points(:,1) - x(1);
+corr_points_y = corr_points(:,2) - y(1);
+
 
 % Start in (0,0)
 x = x - x(1);
@@ -80,6 +107,9 @@ trajectory_rotated = R*[x_ref ; y_ref];
 
 doors_rotated = R*[doors_x' ; doors_y'];
 doors(:,1:2) = doors_rotated';
+
+corr_points_rotated = R*[corr_points_x'; corr_points_y'];
+corr_points = corr_points_rotated';
 
 % Rotate interploation points
 interp_roateted = R*[x ; y];
@@ -100,28 +130,30 @@ theta_ref = theta_ref - theta_ref(1);
 
 trajectory_plot = figure(2);
 axis([map.XWorldLimits(1),map.XWorldLimits(2),map.YWorldLimits(1),map.YWorldLimits(2)])
-gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
+gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*',corr_points(:,1),corr_points(:,2),'m+','LineWidth',2);
 title('TRAJECTORY')
-hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$','$Door coordinates (x,y)$' ,  'AutoUpdate','off');
+hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$','$Door coordinates (x,y)$','$Correctionpoints$', 'AutoUpdate','off');
 set(hl,'Interpreter','latex')
 set(gg,"LineWidth",1.5)
 gg=xlabel("x - [m]");
 set(gg,"Fontsize",14);
 gg=ylabel("y - [m]");
 set(gg,"Fontsize",14);
+hold on;
+
 
 % Plotting reference circle around each point
-for i = 1:length(x_ref)
-    %// center
-    c = [x_ref(i) y_ref(i)];
-
-    pos = [c-radius 2*radius 2*radius];
-    rectangle('Position',pos,'Curvature',[1 1])
-    axis equal
-    
-    text(x_ref(i) + 0.1,y_ref(i) + 0.1 ,num2str(i),'Color','k')
-end
-hold on;
+% for i = 1:length(x_ref)
+%     %// center
+%     c = [x_ref(i) y_ref(i)];
+% 
+%     pos = [c-radius 2*radius 2*radius];
+%     rectangle('Position',pos,'Curvature',[1 1])
+%     axis equal
+%     
+%     text(x_ref(i) + 0.1,y_ref(i) + 0.1 ,num2str(i),'Color','k')
+% end
+% hold on;
 
 
 %% POSITION TRACKING
@@ -129,7 +161,7 @@ hold on;
 % start pos = [x, y, theta]
 pose(1,:) = [x_ref(1), y_ref(1), theta_ref(1)];
 
-% observed position 
+% observed position
 %pose_obs = zeros(100000, 3);
 pose_obs(1,:) = pose(1,:);
 
@@ -139,10 +171,12 @@ thet = [];
 alpha = [];
 v = [];
 w = [];
-
-
+a=0;
+a_1=7;
+a_2=8;
 % iteration counter
 k = 1;
+
 
 % In Hz
 r = robotics.Rate(20);
@@ -150,9 +184,20 @@ r = robotics.Rate(20);
 sp = serial_port_start();
 %CONFIG: timer_period = 0.1. Can change to lower maybe?
 pioneer_init(sp);
-% lidar = SetupLidar();
+lidar = SetupLidar();
 
 pause(2);
+
+
+last_odom_door = [0, 0]; 
+odom_door = [0, 0];
+distance_to_wall = 0;
+last_distance_to_wall = 0;
+
+door_front = [5.02, 18.36; 1.107, -14.06];
+door_front_1 = [4.95, 17.4];
+door_front_3 = [19.32, 4.75];
+
 
 for k1 = 1:length(x_ref)
     
@@ -166,9 +211,8 @@ for k1 = 1:length(x_ref)
         data = loop(sp, pose_ref);
         
         pose_obs(k+1,:) = data(1:3);
-%         k
+
         % Find close by doors
-        %start_coordinates = [2590, 20710];
         pos = data(1:2)*1000;
         range_threshold = 1000; % Search for the door inside threshold
         nearby_door_right = [];
@@ -181,246 +225,156 @@ for k1 = 1:length(x_ref)
             % if it is close enough and not discovered.
             if range < range_threshold && doors(i,4) == 0 
                 if doors(i,3) == 1
-                    nearby_door_right = [doors(i,:), i]; % adding index because needed to change detected or not parameter to true/false
-                    door_detected(1)=1;
-                    doors(i,4) = 1; 
+                    nearby_door_right = [doors(i,:), i];% adding index because needed to change detected or not parameter to true/false
+                    d_i= i;
                 else
                     nearby_door_left = [doors(i,:), i]; 
-                    door_detected(2)=1;
-                    doors(i,4) = 1 ;
+                    d_i= i;
                 end
             end
         end
+
         
         %if close to door, search for them
-%         if ~isempty(nearby_door_right) || ~isempty(nearby_door_left)
-%             scan = LidarScan(lidar);
-% %             scan_array(l)= scan;
-%             door_detected = door_detector(nearby_door_right, nearby_door_left, scan)
-%         end
+        if ~isempty(nearby_door_right) || ~isempty(nearby_door_left)
+            scan = LidarScan(lidar);
+            door_detected = door_detector(nearby_door_right, nearby_door_left, scan);
+        end
         
-
-%-------------------------- if close to door, search for them
-%         if ~isempty(nearby_door_right) 
-%             if(pos(1)-doors(i,1)<200 && pos(2)-doors(i,2)<200)
-%                 door_detected(1)=1;
-%             end
-%         end
-%         if  ~isempty(nearby_door_left)
-%             if(pos(1)-doors(i,1)<20 && pos(2)-doors(i,2)<20)
-%                 door_detected(2)=1;
-%             end
-%         end
-
-% -----------------------------------
-        % door is detected, drive to evaluate if door is open or not.
-        if door_detected(1) == 1
-            sonars = pioneer_read_sonars();
+        % look at this threshold. Could be bigger
+        % a_1 and a_2 is used for the index of each position. This way,
+        % only on distance is calculated on each side and ordered and shit.
+        if (norm(data(1:2) - corr_points(a_1,:)) < 0.3) && (a_1 < a_2)
+            scan = LidarScan(lidar);
+            side=1;
+            [distance_to_wall_1]=distance_calc(scan,side);
+            odom_1=data(1:2);
+             a_1=a_1+2
+        elseif (norm(data(1:2) - corr_points(a_2,:)) < 0.3) && (a_2 < a_1)
+            a_2=a_2+2
+            %test
             pioneer_set_controls(sp, 0, 0);
-            pause(1);
-            %forward
+            pause(0.3);
+            %test
+            scan = LidarScan(lidar);
+            side=1;
+            [distance_to_wall_2]=distance_calc(scan,side);
+            odom_2=data(1:2);
+            distance = norm(odom_1 - odom_2);
+            delta = distance_to_wall_2 - distance_to_wall_1;
+            
+            theta_error = -atan(delta/distance);
+            % Doors
+            doors_x = doors(:,1) - 1000*odom_1(1);
+            doors_y = doors(:,2) - 1000*odom_1(2);
+            corr_points_x = corr_points(:,1) - odom_1(1);
+            corr_points_y = corr_points(:,2) - odom_1(2);
+            door_front_x = door_front(:,1) - odom_1(1);
+            door_front_y = door_front(:,2) - odom_1(2);
+
+            % Rotate points
+            R = [cos(-theta_error) -sin(-theta_error); sin(-theta_error) cos(-theta_error)];
+            trajectory_rotated = R*[x_ref - odom_1(1) ; y_ref - odom_1(2)];
+            doors_rotated = R*[doors_x' ; doors_y'];
+            corr_points_rotated = R*[corr_points_x' ; corr_points_y'];
+            door_front_rotated = R*[door_front_x' ; door_front_y'];
+            
+            % put back
+            doors_rotated(1,:) = doors_rotated(1,:) + odom_1(1)*1000;
+            doors_rotated(2,:) = doors_rotated(2,:) + odom_1(2)*1000;
+            doors(:,1:2) = doors_rotated';
+            
+            corr_points_rotated(1,:) = corr_points_rotated(1,:) + odom_1(1);
+            corr_points_rotated(2,:) = corr_points_rotated(2,:) + odom_1(2);
+            corr_points = corr_points_rotated';
+            
+            door_front_rotated(1,:) = door_front_rotated(1,:) + odom_1(1);
+            door_front_rotated(2,:) = door_front_rotated(2,:) + odom_1(2);
+            door_front = door_front_rotated';
+            
+            
+            % pick out the vectors of rotated x- and y-data
+            x_ref = trajectory_rotated(1,:) + odom_1(1);
+            y_ref = trajectory_rotated(2,:) + odom_1(2);
+            % Correcting theta_ref
+            theta_ref = zeros(1,length(x_ref));
+            for i = 1: length(x_ref)-1 
+                theta_ref(i) = atan2( (y_ref(i+1) - y_ref(i)), (x_ref(i+1) - x_ref(i)));
+            end
+            % Setting last element to previous angle.
+            theta_ref(length(x_ref)) = theta_ref(length(x_ref)-1);
+            theta_ref = theta_ref - theta_ref(1);
+            
+            % DELETING CORRECTION POINTS
+            %corr_points(1,:) = [];
+            %corr_points(2,:) = [];
+            
+            % Plotting
+            trajectory_plot = figure(2);
+            gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*',corr_points(:,1),corr_points(:,2),'m+','LineWidth',2);
+            hold on;
+        end
+    
+        
+        % door is detected, drive to evaluate if door is open or not.
+        if door_detected(1) == 1 % Door on the right side 
+             side=-1;
+            [distance_to_wall]=distance_calc(scan,side);
+            [error,doors]=door_turn(doors,d_i,sp,lidar,distance_to_wall,side);
+            [distance_to_wall]=distance_calc(scan,side);
+            [pose_ref,x_ref,y_ref,doors,corr_points, door_front]=path_door_correction(d_i,pose_ref,x_ref,y_ref,doors,error,corr_points,door_front);
+
+        
+        elseif door_detected(2) == 1 %Door on the left side   
+            side=1;
+            last_odom_door = odom_door;
+            odom_door = data(1:2);
+            last_distance_to_wall = distance_to_wall;
+            distance_to_wall = distance_calc(scan, side);
+            
+            [error,doors]=door_turn(doors, d_i, sp, lidar, distance_to_wall, side);
+            [distance_to_wall]=distance_calc(scan, side);
+            [pose_ref,x_ref,y_ref,doors, corr_points, door_front] = path_door_correction(d_i,pose_ref, x_ref, y_ref, doors, error, corr_points, door_front);
+            
+            
+%             if (d_i == 2 || d_i == 5 || d_i == 7 || d_i == 10 || d_i == 16)
+%                 trajectory_plot = figure(2);
+%                 gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*','LineWidth',2);
+%             end
+        end
+        
+        
+        if (norm(door_front(1,:) - data(1:2)) < 0.5 || norm(door_front(2,:) - data(1:2)) < 0.5 ) && a==0
+            pioneer_set_controls(sp, 0, 0);
+            pause(2);
             pioneer_set_controls(sp, 300, 0);
             pause(1.433333);
             pioneer_set_controls(sp, 0, 0);   
-            pause(0.1);
-            %turn
-            pioneer_set_controls(sp, 0, -85);
-            pause(1);
-            pioneer_set_controls(sp, 0, 0);
-
-            % Check if door is open here
-            
-%             scan_aux=scan(40:125);
-%             for l=1:1:length(scan_aux)
-%                 if scan_aux(l) < 10
-%                     scan_aux(l)=5000;
-%                 end
-%             end
-            
-            %distance_to_wall = min(scan_aux)/1000;
-            distance_to_wall = min(sonars(7:8))/1000;
-            %scan = LidarScan(lidar);
-%             scan_array(l+1)= scan;
-            sonars = pioneer_read_sonars();
-            %door_state=Doors(scan,distance_to_wall);
-            door_state=Doors_sonar(sonars,distance_to_wall);
-% %             %% Correct path with measured error
-% %             
-% %             % THINK WE HAVE TO COORECT THE DOORS ASWELL?
-% %              
-              error = distance_to_wall - doors(i, 5)    
-%             
-%             % x-direction
-%             if (doors(i, 6) == 0)
-%                 
-%                 % add in x-direction
-%                 if (doors(i, 7) == 1)
-%                     for a=1:5
-%                     x_ref(k1+a) = x_ref(k1+a) + error;
-%                     end
-%                 % subtract in x-direction
-%                 else
-%                     for a=1:5
-%                     x_ref(k1+a) = x_ref(k1+a) - error;
-%                     end
-%                 end
-%             % y-direction
-%             else
-%                 % add in y-direction
-%                 if (doors(i, 7) == 1)
-%                     for a=1:5
-%                     y_ref(k1+a) = y_ref(k1+a) + error;
-%                     end
-%                     
-%                 % subtract in y-direction
-%                 else
-%                     for a=1:5
-%                     y_ref(k1+a) = y_ref(k1+a) - error;
-%                     end
-%                     
-%                 end
-%             end
-            
-            %%
-            %
-            % Correct odometry:
-            %error=-0.45;
-%             pause(3);
-%             if error > 0 
-%                 speeder=100;
-%                 time_error=((error*1000)/100)-0.5; 
-%             else
-%                 speeder=-100;
-%                 time_error=((-error*1000)/100)-0.5;
-%             end
-%             pioneer_set_controls(sp, speeder, 0);
-%             pause(time_error);
-%             pioneer_set_controls(sp, 0, 0);
-%             pause(0.1);
-%             %
-%             
-%             pause(3);
-
-            % turn back
-            pioneer_set_controls(sp, 0, 85);
-            pause(1);
-            pioneer_set_controls(sp, 0, 0);
-            pause(0.1);
-            %backward
+            pause(2);
+            soundsc(signalclose,Fs);
+            pause(2);
             pioneer_set_controls(sp, -300, 0);
             pause(1.433333);
             pioneer_set_controls(sp, 0, 0);
             pause(1);
+            a=1;
+        end
         
-        elseif door_detected(2) == 1
-            sonars = pioneer_read_sonars();
+         if (norm(door_front(2,:) - data(1:2)) < 0.5 ) && a==1
             pioneer_set_controls(sp, 0, 0);
-            pause(1);
-            %forward
+            pause(2);
             pioneer_set_controls(sp, 300, 0);
             pause(1.433333);
-            pioneer_set_controls(sp, 0, 0);
-            pause(0.1);
-            %turn
-            pioneer_set_controls(sp, 0, 85);
+            pioneer_set_controls(sp, 0, 0);   
             pause(1);
-            pioneer_set_controls(sp, 0, 0);
-
-            % Check if door is open here
-            % Fransiscos function in here
-            % esquerda 587
-            % direita 85
-             % Check if door is open here
-%             scan_aux=scan(547:627);
-%             for l=1:1:length(scan_aux)
-%                 if scan_aux(l) < 10
-%                     scan_aux(l)=5000;
-%                 end
-%             end
-%             
-%             distance_to_wall = min(scan_aux)/1000;
-            distance_to_wall = min(sonars(1:2))/1000;
-            %scan = LidarScan(lidar);
-%             scan_array(l+1)= scan;
-            sonars = pioneer_read_sonars();
-            %door_state=Doors(scan,distance_to_wall);
-            door_state=Doors_sonar(sonars,distance_to_wall);
-%             
-%             
-%             
-%             %distance_to_wall = scan(587)/1000
-%             scan = LidarScan(lidar);
-%             door_state=Doors(scan,distance_to_wall);
-            %% Correct path with measured error
-             error = distance_to_wall - doors(i, 5)    
-            % x-direction
-%             if (doors(i, 6) == 0)
-%                 
-%                 % add in x-direction
-%                 if (doors(i, 7) == 1)
-%                     for a=1:5
-%                     x_ref(k1+a) = x_ref(k1+a) + error;
-%                     end
-%                 % subtract in x-direction
-%                 else
-%                     for a=1:5
-%                     x_ref(k1+a) = x_ref(k1+a) - error;
-%                     end
-%                 end
-%             % y-direction
-%             else
-%                 % add in y-direction
-%                 if (doors(i, 7) == 1)
-%                     for a=1:5
-%                     y_ref(k1+a) = y_ref(k1+a) + error;
-%                     end
-%                     
-%                 % subtract in y-direction
-%                 else
-%                     for a=1:5
-%                     y_ref(k1+a) = y_ref(k1+a) - error;
-%                     end
-%                     
-%                 end
-%             end
-            %%
-            
-            %error=-0.45;
-%             pause(3);
-%             if error > 0 
-%                 speeder=100;
-%                 time_error=((error*1000)/100)-0.5; 
-%             else
-%                 speeder=-100;
-%                 time_error=((-error*1000)/100)-0.5;
-%             end
-%             pioneer_set_controls(sp, speeder, 0);
-%             pause(time_error);
-%             pioneer_set_controls(sp, 0, 0);
-%             pause(0.1);
-%             %      
-            pause(3);
-
-            % turn back
-            pioneer_set_controls(sp, 0, -85);
-            pause(1);
-            pioneer_set_controls(sp, 0, 0);
-            pause(0.1);
-            % backward
+            soundsc(signalclose,Fs);
+            pause(2);
             pioneer_set_controls(sp, -300, 0);
             pause(1.433333);
             pioneer_set_controls(sp, 0, 0);
             pause(1);
-        end
-        %         
-        
-%         % Special case for corner doors facing striaght forward
-%         if norm([5.02, 18.36] - pos(1:2)) < 0.2 || norm([18.74, 5.13] - pos(1:2)) < 0.2
-%            pioneer_set_controls(sp, 0, 0);
-%            pause(3);
-%            
-%         end
-%         
+            a=2;
+         end
         
 %         figure(2);
 %         hold on;
@@ -437,7 +391,7 @@ end
 
 % figure(2)
 % plot(pose_obs(:,1), pose_obs(:,2), 'g.')
-
+soundsc(signalshutdown,Fs1);
 pioneer_set_controls(sp, 0, 0);
 pioneer_close(sp);
 fclose(lidar);
@@ -446,12 +400,12 @@ stats = statistics(r)
 function data = loop(sp, pose_ref)
     
     % TUNING
-    K1 = 0.5; % Artikkel: 0.41 2.94 1.42 0.5
-    K2 = 2.3;
-    K3 = 1.5;
+    K1 = 0.41; % Artikkel: 0.41 2.94 1.42 0.5
+    K2 = 2.3;%2.3;
+    K3 = 1.6; %1.5;
     v_max = 1.1;
     
-%     if( x_y_error== 
+    
 %     offset_x = 
 
     % READ ODOMETRY HERE to get pose_obs

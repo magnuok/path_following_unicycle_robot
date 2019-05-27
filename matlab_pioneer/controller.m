@@ -27,7 +27,7 @@ doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
 radius = 0.3; %0.25;
-measurment_points = 250;
+measurment_points = 500;
 
 %path = path_planner();
  
@@ -47,15 +47,18 @@ corr_points = [6.6,15.83;
 21.53,8.08;
 21.53,6.54;
 20.26,1.5;
-19.20,1.5;
+19.6,1.5;
 12.42,1.5;
 11.36, 1.5;
 6.93,3.02;
-6.93,5.6;
+6.93,4.5;
 6.93,7.26;
-6.93,10.61
+6.93,8.9;
 0.0,0.0;
 0.0,0.0];
+
+
+door_front = [21.08, 15.85; 7.33, 2.0];
 
 % Make sure elements are distinct for interpolating
 for i = 1:length(x)
@@ -94,6 +97,10 @@ corr_points_x = corr_points(:,1) - x(1);
 corr_points_y = corr_points(:,2) - y(1);
 
 
+door_front_x = door_front(:,1) - x(1);
+door_front_y = door_front(:,2) - y(1);
+
+
 % Start in (0,0)
 x = x - x(1);
 y = y - y(1);
@@ -107,6 +114,8 @@ trajectory_rotated = R*[x_ref ; y_ref];
 
 doors_rotated = R*[doors_x' ; doors_y'];
 doors(:,1:2) = doors_rotated';
+door_front_rotated = R*[door_front_x' ; door_front_y'];
+door_front = door_front_rotated';
 
 corr_points_rotated = R*[corr_points_x'; corr_points_y'];
 corr_points = corr_points_rotated';
@@ -194,9 +203,6 @@ odom_door = [0, 0];
 distance_to_wall = 0;
 last_distance_to_wall = 0;
 
-door_front = [5.02, 18.36; 19.32, 4.75];
-door_front_1 = [4.95, 17.4];
-door_front_3 = [19.32, 4.75];
 
 
 for k1 = 1:length(x_ref)
@@ -214,7 +220,7 @@ for k1 = 1:length(x_ref)
 
         % Find close by doors
         pos = data(1:2)*1000;
-        range_threshold = 1300; % Search for the door inside threshold
+        range_threshold = 1000; % Search for the door inside threshold
         nearby_door_right = [];
         nearby_door_left = [];
         door_detected = [0 0];
