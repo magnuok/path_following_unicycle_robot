@@ -241,13 +241,13 @@ for k1 = 1:length(x_ref)
         % look at this threshold. Could be bigger
         % a_1 and a_2 is used for the index of each position. This way,
         % only on distance is calculated on each side and ordered and shit.
-        if ((norm(data(1:2) - corr_points(1,:)) < 0.3) %&& (a_1 < a_2))
+        if (norm(data(1:2) - corr_points(1,:)) < 0.3) %&& (a_1 < a_2))
             scan = LidarScan(lidar);
             side=1;
             [distance_to_wall_1]=distance_calc(scan,side);
             odom_1=data(1:2);
 %             a_1=a_1+2
-        elseif ((norm(data(1:2) - corr_points(2,:)) < 0.3) %&& (a_2 < a_1))
+        elseif (norm(data(1:2) - corr_points(2,:)) < 0.3) %&& (a_2 < a_1))
 %              a_2=a_2+2
             scan = LidarScan(lidar);
             side=1;
