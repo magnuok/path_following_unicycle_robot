@@ -40,14 +40,14 @@ y = path(:,2)';
 
 %corr_points = [21.53 8.4; 21.53 6.4; 21.53 6.4; 21.53 6.4];
 
-corr_points = [7.02,15.83;
-9.13,15.83;
-17.6,15.83;
-18.4,15.83;
-21.53,8.09;
-21.53,4.84;
+corr_points = [6.6,15.83;
+8.38,15.83;
+17.3,15.83;
+18.3,15.83;
+21.53,7.4;
+21.53,5.3;
 20.26,1.5;
-18.89,1.5;
+19.20,1.5;
 12.42,1.5;
 10.36, 1.5;
 6.93,3.02;
@@ -170,7 +170,8 @@ alpha = [];
 v = [];
 w = [];
 a=0;
-
+a_1=1;
+a_2=2;
 % iteration counter
 k = 1;
 
@@ -238,12 +239,16 @@ for k1 = 1:length(x_ref)
         end
         
         % look at this threshold. Could be bigger
-        if (norm(data(1:2) - corr_points(1,:)) < 0.2)
+        % a_1 and a_2 is used for the index of each position. This way,
+        % only on distance is calculated on each side and ordered and shit.
+        if ((norm(data(1:2) - corr_points(1,:)) < 0.3) %&& (a_1 < a_2))
             scan = LidarScan(lidar);
             side=1;
             [distance_to_wall_1]=distance_calc(scan,side);
-            odom_1=data(1:2);    
-        elseif (norm(data(1:2) - corr_points(2,:)) < 0.2)
+            odom_1=data(1:2);
+%             a_1=a_1+2
+        elseif ((norm(data(1:2) - corr_points(2,:)) < 0.3) %&& (a_2 < a_1))
+%              a_2=a_2+2
             scan = LidarScan(lidar);
             side=1;
             [distance_to_wall_2]=distance_calc(scan,side);
@@ -255,8 +260,8 @@ for k1 = 1:length(x_ref)
             % Doors
             doors_x = doors(:,1) - 1000*odom_1(1);
             doors_y = doors(:,2) - 1000*odom_1(2);
-            corr_points_x =corr_points(:,1) - odom_1(1);
-            corr_points_y =corr_points(:,2) - odom_1(2);
+            corr_points_x = corr_points(:,1) - odom_1(1);
+            corr_points_y = corr_points(:,2) - odom_1(2);
             door_front_x = door_front(:,1) - odom_1(1);
             door_front_y = door_front(:,2) - odom_1(2);
 
