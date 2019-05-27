@@ -1,19 +1,31 @@
 %% Create map
 clear all;
 close all;
-clf; 
+clf;
+
+% results.goal = [];
+% results.bestcost = [];
+% results.T0 = [];
+% results.alpha = [];
+% results.iterations = [];
+% results.time = []; %seconds
+% save('results.mat', 'results');
 
 % TUNING VARIABLES
  radius = 0.25;
- measurment_points = 15;
+ measurment_points = 4;
  
 % INTERPOLATION AND PLOTS
 
 
-path = [-0.5, 0; -1, 0; -2, 0; -2.5, 0; -1 0.5];
+%path = [-0.5, 0; -1, 0; -2, 0; -2.5, 0; -1 0.5];
+%path = [-0.5, 0; -1, 0; -1.5, 0; -2, 0; -2.5, 0; -2.5 1;-2.5 2];
+%path = [-0.5, 0; -1, 0; -1.5, 0; -2, 0; -2.5, 0];
 
-path = [-0.5, 0; -1, 0; -1.5, 0; -2, 0; -2.5, 0; -2.5 1;-2.5 2];
-path = [-0.5, 0; -1, 0; -1.5, 0; -2, 0; -2.5, 0];
+% For tuning and plotting
+path = [0, 0; -1, 0];
+goal_x = -1;
+goal_y = 0;
 
 %path = dlmread('path_nice_corrected_2.txt');
 
@@ -70,19 +82,45 @@ end
 theta_ref(length(x_ref)) = theta_ref(length(x_ref)-1);
 theta_ref = theta_ref;
 
-trajectory_plot = figure(2);
-axis([min(x_ref)-1, max(x_ref)+1,min(y_ref)-2,max(y_ref)+2])
-gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-','LineWidth',2);
+% trajectory_plot = figure(2);
+% axis([min(x_ref)-1, max(x_ref)+1,min(y_ref)-2,max(y_ref)+2])
+% gg = plot(x_ref,y_ref,'o',x_ref,y_ref,'-','LineWidth',2);
+% title('TRAJECTORY')
+% hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$',  'AutoUpdate','off');
+% set(hl,'Interpreter','latex')
+% set(gg,"LineWidth",1.5)
+% gg=xlabel("x - [m]");
+% set(gg,"Fontsize",14);
+% gg=ylabel("y - [m]");
+% set(gg,"Fontsize",14);
+% hold on;
+% 
+% % Plotting reference circle around each point
+% for i = 1:length(x_ref)
+%     %// center
+%     c = [x_ref(i) y_ref(i)];
+% 
+%     pos = [c-radius 2*radius 2*radius];
+%     rectangle('Position',pos,'Curvature',[1 1])
+%     axis equal
+%     
+%     text(x_ref(i) + 0.1,y_ref(i) + 0.1 ,num2str(i),'Color','k')
+% end
+% hold on;
+
+trajectory_plot = figure(3);
+
+gg = plot(0,0,'>',goal_x,goal_y,'*',x_ref,y_ref,'-','LineWidth',2,'MarkerSize',10);
 title('TRAJECTORY')
-hl=legend('$Interpolation points (x,y)$' ,'$(x_{ref},y_{ref})$',  'AutoUpdate','off');
+hl=legend('$Startposition$' ,'$Goal$', 'AutoUpdate','off');
 set(hl,'Interpreter','latex')
 set(gg,"LineWidth",1.5)
 gg=xlabel("x - [m]");
 set(gg,"Fontsize",14);
 gg=ylabel("y - [m]");
 set(gg,"Fontsize",14);
+axis([-3, 2,-2,2])
 hold on;
-
 
 % Plotting reference circle around each point
 for i = 1:length(x_ref)
@@ -96,7 +134,6 @@ for i = 1:length(x_ref)
     text(x_ref(i) + 0.1,y_ref(i) + 0.1 ,num2str(i),'Color','k')
 end
 hold on;
-
 
 %% POSITION TRACKING
 
@@ -157,12 +194,24 @@ for k1 = 1:length(x_ref)
     end
 end
 
- figure(2)
- plot(pose_obs(:,1), pose_obs(:,2), 'g.')
+figure(3)
+plot(pose_obs(:,1), pose_obs(:,2), 'g.')
 
 pioneer_set_controls(sp, 0, 0);
 pioneer_close(sp);
 stats = statistics(r)
+
+pos_error = zeros(1,length(pose_obs));
+for k = 1:length(pose_obs)
+    pos_error(k) = norm(pose_obs(k,1:2) - pose_ref(1:2));
+end
+
+load('results.mat');
+% Change every time.
+results.pos_error5 = pos_error;
+
+save('results.mat', 'results')
+
 
 function data = loop(sp, pose_ref)
     
@@ -228,3 +277,6 @@ function data = loop(sp, pose_ref)
     data = [pose_new, e, theta, alpha, v, w];
     
 end
+
+
+
