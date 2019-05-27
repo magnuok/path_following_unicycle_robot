@@ -26,7 +26,7 @@ global doors;
 doors = dlmread('doors.txt'); % [x,y,bol] bol=1 right bol=0 left
 
  % TUNING VARIABLES
-radius = 0.25;
+radius = 0.3; %0.25;
 measurment_points = 250;
 
 %path = path_planner();
@@ -43,17 +43,19 @@ y = path(:,2)';
 corr_points = [6.6,15.83;
 8.38,15.83;
 17.3,15.83;
-18.3,15.83;
-21.53,7.4;
-21.53,5.3;
+17.65,15.83;
+21.53,8.08;
+21.53,6.54;
 20.26,1.5;
 19.20,1.5;
 12.42,1.5;
-10.36, 1.5;
+11.36, 1.5;
 6.93,3.02;
 6.93,5.6;
 6.93,7.26;
-6.93,10.61];
+6.93,10.61
+0.0,0.0;
+0.0,0.0];
 
 % Make sure elements are distinct for interpolating
 for i = 1:length(x)
@@ -175,6 +177,7 @@ a_2=2;
 % iteration counter
 k = 1;
 
+
 % In Hz
 r = robotics.Rate(20);
 
@@ -241,14 +244,18 @@ for k1 = 1:length(x_ref)
         % look at this threshold. Could be bigger
         % a_1 and a_2 is used for the index of each position. This way,
         % only on distance is calculated on each side and ordered and shit.
-        if (norm(data(1:2) - corr_points(1,:)) < 0.3) %&& (a_1 < a_2))
+        if (norm(data(1:2) - corr_points(a_1,:)) < 0.3) && (a_1 < a_2)
             scan = LidarScan(lidar);
             side=1;
             [distance_to_wall_1]=distance_calc(scan,side);
             odom_1=data(1:2);
-%             a_1=a_1+2
-        elseif (norm(data(1:2) - corr_points(2,:)) < 0.3) %&& (a_2 < a_1))
-%              a_2=a_2+2
+             a_1=a_1+2
+        elseif (norm(data(1:2) - corr_points(a_2,:)) < 0.3) && (a_2 < a_1)
+            a_2=a_2+2
+            %test
+            pioneer_set_controls(sp, 0, 0);
+            pause(0.3);
+            %test
             scan = LidarScan(lidar);
             side=1;
             [distance_to_wall_2]=distance_calc(scan,side);
@@ -299,8 +306,8 @@ for k1 = 1:length(x_ref)
             theta_ref = theta_ref - theta_ref(1);
             
             % DELETING CORRECTION POINTS
-            corr_points(1,:) = [];
-            corr_points(2,:) = [];
+            %corr_points(1,:) = [];
+            %corr_points(2,:) = [];
             
             % Plotting
             trajectory_plot = figure(2);
