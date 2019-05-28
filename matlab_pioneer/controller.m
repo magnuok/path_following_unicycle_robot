@@ -32,8 +32,8 @@ measurment_points = 250;
 %path = path_planner();
  
 % INTERPOLATION AND PLOTS
-path = dlmread('path_nice_verynice_test.txt');
-%path = dlmread('path_nice_corrected_2.txt');
+%path = dlmread('path_nice_verynice_test.txt');
+path = dlmread('path_nice_corrected_2.txt');
 
 x = path(:,1)';
 y = path(:,2)';
@@ -359,8 +359,8 @@ for k1 = 1:length(x_ref)
         
         
         if (norm(door_front(1,:) - data(1:2)) < 0.3 || norm(door_front(2,:) - data(1:2)) < 0.3 ) && a==0
-%             pioneer_set_controls(sp, 0, 0);
-%             pause(2);
+             pioneer_set_controls(sp, 0, 0);
+             pause(2);
 %             pioneer_set_controls(sp, 300, 0);
 %             pause(1.433333);
 %             pioneer_set_controls(sp, 0, 0);   
@@ -370,7 +370,7 @@ for k1 = 1:length(x_ref)
 %             pioneer_set_controls(sp, -300, 0);
 %             pause(1.433333);
 %             pioneer_set_controls(sp, 0, 0);
-            pause(1);
+%            pause(1);
             
             % Copy paste if works
             scan = LidarScan(lidar);
@@ -382,7 +382,7 @@ for k1 = 1:length(x_ref)
             end
             distance_to_wall = min(scan_aux)/1000
             % measure here
-            error = distance_to_wall - 1
+            error = distance_to_wall - 1.2 
 
             % Robot position correction, knowing the error, moves forward or
             % backward
@@ -408,22 +408,65 @@ for k1 = 1:length(x_ref)
             gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*',corr_points(:,1),corr_points(:,2),'m+','LineWidth',2);
             hold on;
             
+             pause(2);
+             soundsc(signalclose,Fs);
+             pause(2);
+            
         end
         
-         if (norm(door_front(2,:) - data(1:2)) < 0.5 ) && a==1
-            pioneer_set_controls(sp, 0, 0);
-            pause(2);
-            pioneer_set_controls(sp, 300, 0);
-            pause(1.433333);
-            pioneer_set_controls(sp, 0, 0);
-            pause(1);
-            soundsc(signalclose,Fs);
-            pause(2);
-            pioneer_set_controls(sp, -300, 0);
-            pause(1.433333);
-            pioneer_set_controls(sp, 0, 0);
-            pause(1);           
+         if (norm(door_front(2,:) - data(1:2)) < 0.3 ) && a==1
+%             pioneer_set_controls(sp, 0, 0);
+%             pause(2);
+%             pioneer_set_controls(sp, 300, 0);
+%             pause(1.433333);
+%             pioneer_set_controls(sp, 0, 0);
+%             pause(1);
+%             soundsc(signalclose,Fs);
+%             pause(2);
+%             pioneer_set_controls(sp, -300, 0);
+%             pause(1.433333);
+%             pioneer_set_controls(sp, 0, 0);
+%             pause(1);
+
+            scan = LidarScan(lidar);
+            scan_aux=scan(331:351);
+            for l=1:1:length(scan_aux)
+                if scan_aux(l) < 10
+                    scan_aux(l)=5000;
+                end
+            end
+            distance_to_wall = min(scan_aux)/1000
+            % measure here
+            error = distance_to_wall - 1.2 
+
+            % Robot position correction, knowing the error, moves forward or
+            % backward
+            if abs(error) > 0.05
+                if error > 0 
+                    speeder=100;
+                    time_error=((error*1000)/100)-0.4; 
+                else
+                    speeder=-100;
+                    time_error=((-error*1000)/100)-0.4;
+                end
+                pause(1);
+                pioneer_set_controls(sp, speeder, 0);
+                pause(time_error);
+                pioneer_set_controls(sp, 0, 0);           
+                pause(3);
+            end
+            
+            [pose_ref,x_ref,y_ref,doors, corr_points, door_front] = path_door_correction(16,pose_ref, x_ref, y_ref, doors, error, corr_points, door_front);
             a=2;
+            
+            trajectory_plot = figure(2);
+            gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*',corr_points(:,1),corr_points(:,2),'m+','LineWidth',2);
+            hold on;
+            
+             pause(2);
+             soundsc(signalclose,Fs);
+             pause(2);
+            
          end
         
 %         figure(2);
