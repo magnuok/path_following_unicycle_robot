@@ -60,7 +60,7 @@ corr_points = [7,15.83;
 0.0,0.0];
 
 
-door_front = [21.08, 15.85; 7.33, 2.0];
+door_front = [20.9, 15.85; 7.45, 2.0];
 
 % Make sure elements are distinct for interpolating
 for i = 1:length(x)
@@ -382,7 +382,7 @@ for k1 = 1:length(x_ref)
             end
             distance_to_wall = min(scan_aux)/1000
             % measure here
-            error = distance_to_wall - 1.2 
+            error = distance_to_wall - 1.3 
 
             % Robot position correction, knowing the error, moves forward or
             % backward
@@ -408,9 +408,9 @@ for k1 = 1:length(x_ref)
             gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*',corr_points(:,1),corr_points(:,2),'m+','LineWidth',2);
             hold on;
             
-             pause(2);
-             soundsc(signalclose,Fs);
-             pause(2);
+            pause(2);
+            soundsc(signalclose,Fs);
+            pause(2);
             
         end
         
@@ -437,7 +437,7 @@ for k1 = 1:length(x_ref)
             end
             distance_to_wall = min(scan_aux)/1000
             % measure here
-            error = distance_to_wall - 1.2 
+            error = distance_to_wall - 1.3 
 
             % Robot position correction, knowing the error, moves forward or
             % backward
