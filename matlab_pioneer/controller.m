@@ -330,9 +330,9 @@ for k1 = 1:length(x_ref)
             %corr_points(2,:) = [];
             
             % Plotting
-            trajectory_plot = figure(2);
-            gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*',corr_points(:,1),corr_points(:,2),'m+','LineWidth',2);
-            hold on;
+%             trajectory_plot = figure(2);
+%             gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*',corr_points(:,1),corr_points(:,2),'m+','LineWidth',2);
+%             hold on;
         end
     
         
@@ -358,18 +358,18 @@ for k1 = 1:length(x_ref)
         end
         
         
-        if (norm(door_front(1,:) - data(1:2)) < 0.5 || norm(door_front(2,:) - data(1:2)) < 0.5 ) && a==0
-            pioneer_set_controls(sp, 0, 0);
-            pause(2);
-            pioneer_set_controls(sp, 300, 0);
-            pause(1.433333);
-            pioneer_set_controls(sp, 0, 0);   
-            pause(2);
-            soundsc(signalclose,Fs);
-            pause(2);
-            pioneer_set_controls(sp, -300, 0);
-            pause(1.433333);
-            pioneer_set_controls(sp, 0, 0);
+        if (norm(door_front(1,:) - data(1:2)) < 0.3 || norm(door_front(2,:) - data(1:2)) < 0.3 ) && a==0
+%             pioneer_set_controls(sp, 0, 0);
+%             pause(2);
+%             pioneer_set_controls(sp, 300, 0);
+%             pause(1.433333);
+%             pioneer_set_controls(sp, 0, 0);   
+%             pause(2);
+%             soundsc(signalclose,Fs);
+%             pause(2);
+%             pioneer_set_controls(sp, -300, 0);
+%             pause(1.433333);
+%             pioneer_set_controls(sp, 0, 0);
             pause(1);
             
             % Copy paste if works
@@ -403,6 +403,10 @@ for k1 = 1:length(x_ref)
             
             [pose_ref,x_ref,y_ref,doors, corr_points, door_front] = path_door_correction(7,pose_ref, x_ref, y_ref, doors, error, corr_points, door_front);
             a=1;
+            
+            trajectory_plot = figure(2);
+            gg = plot(x_ref,y_ref,'-',doors_rotated(1,:)/1000,doors_rotated(2,:)/1000,'*',corr_points(:,1),corr_points(:,2),'m+','LineWidth',2);
+            hold on;
             
         end
         
