@@ -1,8 +1,0 @@
-function time = tsum(t, odemetry)
-    time = 0;
-    for i = 1 :length(t)
-       if odemetry(i)=odemetry(i+1)
-        time() = time + t(i);
-       end
-    end
-end
